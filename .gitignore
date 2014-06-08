@@ -1,0 +1,43 @@
+# built application files
+gridRunnerGDX/*.apk
+gridRunnerGDX/*.ap_
+
+# files for the dex VM
+gridRunnerGDX/*.dex
+
+# Java class files
+gridRunnerGDX/*.class
+
+# generated files
+gridRunnerGDX/bin/
+gridRunnerGDX/gen/
+
+# Local configuration file (sdk path, etc)
+gridRunnerGDX/local.properties
+
+gridRunnerGDX/*.pydevproject
+gridRunnerGDX/.project
+.metadata
+gridRunnerGDX/bin/**
+gridRunnerGDX/tmp/**
+gridRunnerGDX/tmp/**/*
+gridRunnerGDX/*.tmp
+gridRunnerGDX/*.bak
+gridRunnerGDX/*.swp
+gridRunnerGDX/*~.nib
+gridRunnerGDX/local.properties
+gridRunnerGDX/.classpath
+gridRunnerGDX/.settings/
+gridRunnerGDX/.loadpath
+
+# External tool builders
+gridRunnerGDX/.externalToolBuilders/
+
+# Locally stored "Eclipse launch configurations"
+gridRunnerGDX/*.launch
+
+# CDT-specific
+gridRunnerGDX/.cproject
+
+# PDT-specific
+gridRunnerGDX/.buildpath

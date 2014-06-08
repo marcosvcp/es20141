@@ -1,12 +1,16 @@
 package com.gridrunner.game.android;
 
 import android.os.Bundle;
+import android.view.MotionEvent;
 
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.gridrunner.game.GridRunner;
 
 public class AndroidLauncher extends AndroidApplication {
+
+	private GridRunner grid;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -14,7 +18,15 @@ public class AndroidLauncher extends AndroidApplication {
 		config.useAccelerometer = false;
 		config.useCompass = false;
 		config.useWakelock = true;
+		grid = new GridRunner();
 		config.useGLSurfaceView20API18 = true;
-		initialize(new GridRunner(), config);
+		initialize(grid, config);
+	}
+
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		grid.move();
+		return super.onTouchEvent(event);
+
 	}
 }
