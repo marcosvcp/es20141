@@ -1,11 +1,13 @@
 package com.gridrunner.game.android;
 
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.gridrunner.game.GridRunner;
+import com.gridrunner.game.Obstacle;
 
 public class AndroidLauncher extends AndroidApplication {
 
@@ -24,8 +26,12 @@ public class AndroidLauncher extends AndroidApplication {
 	}
 
 	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		return super.onKeyDown(keyCode, event);
+	}
+
+	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		grid.move();
 		return super.onTouchEvent(event);
 
 	}

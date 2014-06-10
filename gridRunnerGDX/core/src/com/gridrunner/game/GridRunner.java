@@ -1,58 +1,46 @@
 package com.gridrunner.game;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 
 public class GridRunner extends ApplicationAdapter {
-	SpriteBatch batch;
-	Texture img;
-	private int x;
-	private int y;
-	private int width;
-	private int height;
-	private int x2;
-	private int y2;
+
+	double coolDown;
+	List<Obstacle> obstacles;
+	private SpriteBatch batch;
+	int yCreate = 300;
 
 	@Override
 	public void create() {
 		batch = new SpriteBatch();
-		img = new Texture("badlogic.jpg");
+		Gdx.gl.glClearColor(1, 0, 0, 1);
+		obstacles = new ArrayList<Obstacle>();
+		obstacles.add(new Obstacle(batch, 0, yCreate, -1));
+		obstacles.add(new Obstacle(batch, 0, yCreate + 100, -1));
 	}
 
 	@Override
 	public void render() {
-		Gdx.gl.glClearColor(1, 0, 0, 1);
+		if (coolDown % 40 == 0) {
+			yCreate += 50;
+			obstacles.add(new Obstacle(batch, 0, yCreate, -1));
+			obstacles.add(new Obstacle(batch, 0, yCreate + 100, -1));
+		}
+		coolDown += 0.25;
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		batch.begin();
-		batch.draw(img, x, y);
-		batch.end();
-		// ShapeRenderer shapeRenderer = new ShapeRenderer();
-		// shapeRenderer.begin(ShapeType.Line);
-		// shapeRenderer.setColor(1, 1, 0, 1);
-		// shapeRenderer.line(x, y, x2, y2);
-		// shapeRenderer.rect(x, y, width, height);
-		// shapeRenderer.circle(x, y, 10);
-		// shapeRenderer.end();
-	}
-
-	public void move() {
-		ShapeRenderer shapeRenderer = new ShapeRenderer();
-		shapeRenderer.begin(ShapeType.Line);
-		shapeRenderer.setColor(1, 1, 0, 1);
-		shapeRenderer.line(x, y, x2, y2);
-		shapeRenderer.rect(x, y, width, height);
-		shapeRenderer.circle(x, y, 10);
-		shapeRenderer.end();
-		Gdx.gl.glClearColor(1, 0, 0, 1);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		batch.begin();
-		x += 10;
-		batch.draw(img, x, y);
+		if (obstacles.get(0).getYposition() < 0) {
+			obstacles.remove(obstacles.get(0));
+		}
+		for (Obstacle obstacle : obstacles) {
+			obstacle.render();
+		}
 		batch.end();
 	}
 }
