@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
@@ -33,6 +34,7 @@ public class Biscoitinho extends ApplicationAdapter {
 	private Array<Rectangle> raindrops;
 	private long lastDropTime;
 
+	private TextureRegion region;
 	private Rectangle bucket;
 
 	private Sound drop;
@@ -53,6 +55,8 @@ public class Biscoitinho extends ApplicationAdapter {
 		loadSoundAndMusics();
 		loadElements();
 		spawnRaindrop();
+		Texture texture = new Texture(Gdx.files.internal("bg.jpg"));
+		region = new TextureRegion(texture, 0, 0, 800, 480);
 	}
 
 	private void loadElements() {
@@ -83,8 +87,11 @@ public class Biscoitinho extends ApplicationAdapter {
 
 	@Override
 	public void render() {
-		Gdx.gl.glClearColor(0, 0, 0.2f, 1);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		// Gdx.gl.glClearColor(0, 0, 0.2f, 1);
+		// Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		batch.begin();
+		batch.draw(region, 0, 0);
+		batch.end();
 		camera.update();
 		batch.setProjectionMatrix(camera.combined);
 		renderPlayer();
