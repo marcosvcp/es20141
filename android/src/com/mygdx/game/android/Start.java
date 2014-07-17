@@ -12,7 +12,7 @@ public class Start extends AndroidApplication {
 	protected void onCreate (Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		AndroidApplicationConfiguration cfg = new AndroidApplicationConfiguration();
-		cfg.useAccelerometer = false;
+		cfg.useAccelerometer = true;
 	    cfg.useCompass = false;
 		initialize(new Biscoitinho(), cfg);
 	}

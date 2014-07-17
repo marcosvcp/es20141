@@ -9,10 +9,7 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g3d.utils.AnimationController;
-import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationDesc;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
@@ -74,7 +71,7 @@ public class Biscoitinho extends ApplicationAdapter {
 	}
 
 	private void loadImages() {
-		dropImage = new Texture(Gdx.files.internal("droplet.png"));
+		dropImage = new Texture(Gdx.files.internal("droplet2.png"));
 		bucketImage = new Texture(Gdx.files.internal("boneco1.png"));
 		// background = new Texture(Gdx.files.internal("chuva.jpg"));
 	}
@@ -104,7 +101,7 @@ public class Biscoitinho extends ApplicationAdapter {
 	}
 
 	private void createRaindDrops() {
-		if (TimeUtils.nanoTime() - lastDropTime > 1000000000) {
+		if (TimeUtils.nanoTime() - lastDropTime > 1000000) {
 			spawnRaindrop();
 		}
 		Iterator<Rectangle> it = raindrops.iterator();
@@ -142,14 +139,41 @@ public class Biscoitinho extends ApplicationAdapter {
 		if (Gdx.input.isTouched()) {
 			clicked = true;
 		}
-
 		if (clicked) {
 			moveBucketToTouchLocal();
+		} else {
+			moveBucketToAccelerometer();
 		}
 		batch.begin();
 		batch.draw(bucketImage, bucket.x, bucket.y);
 		batch.end();
 
+	}
+
+	private void moveBucketToAccelerometer() {
+		Vector3 vector = new Vector3(16 * (Gdx.input.getAccelerometerY() + 10),
+				Gdx.input.getAccelerometerX(), 0);
+		camera.unproject(vector);
+		if (bucket.x < vector.x) {
+			bucket.x += 200 * Gdx.graphics.getDeltaTime();
+			if (bucket.x > vector.x) {
+				bucket.x = vector.x;
+			}
+		} else if (bucket.x > vector.x) {
+			bucket.x -= 200 * Gdx.graphics.getDeltaTime();
+			if (bucket.x < vector.x) {
+				bucket.x = vector.x;
+			}
+		} else {
+			clicked = false;
+		}
+
+		if (bucket.x > WIDTH - bucket.width) {
+			bucket.x = WIDTH - bucket.width;
+		}
+		if (bucket.x < 0) {
+			bucket.x = 0;
+		}
 	}
 
 	private void moveBucketToTouchLocal() {
