@@ -1,21 +1,25 @@
 package com.mygdx.game;
 
 import java.util.Iterator;
+import java.util.Random;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.audio.Sound;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.TimeUtils;
+
+import control.Assets;
+import control.DropObject;
+import control.Gingerman;
+import control.RainDrop;
+import control.SugarDrop;
 
 public class Biscoitinho extends ApplicationAdapter {
 
@@ -24,60 +28,41 @@ public class Biscoitinho extends ApplicationAdapter {
 
 	private boolean clicked;
 
-	private int rainDropCatcher = 0;
 	private SpriteBatch batch;
 	private OrthographicCamera camera;
 
-	private Texture bucketImage;
-	private Texture dropImage;
-
-	private Array<Rectangle> raindrops;
+	private Array<DropObject> drops;
 	private long lastDropTime;
 
 	private TextureRegion region;
-	private Rectangle bucket;
+	private Gingerman gingerMan;
 
-	private Sound drop;
 	private Music rain;
-	private String[] imageNames = new String[5];
 
 	@Override
 	public void create() {
-		imageNames[0] = "boneco1.png";
-		imageNames[1] = "boneco2.png";
-		imageNames[2] = "boneco3.png";
-		imageNames[3] = "boneco4.png";
-		imageNames[4] = "boneco5.png";
 		batch = new SpriteBatch();
-		raindrops = new Array<Rectangle>();
+		drops = new Array<DropObject>();
 		loadCamera();
-		loadImages();
 		loadSoundAndMusics();
 		loadElements();
 		spawnRaindrop();
 		Texture texture = new Texture(Gdx.files.internal("bg.jpg"));
-		region = new TextureRegion(texture, 0, 0, 800, 480);
+		region = new TextureRegion(texture, 0, 0, WIDTH, HEIGHT);
 	}
 
 	private void loadElements() {
-		bucket = new Rectangle();
-		bucket.setSize(110, 125);
-		bucket.setX(WIDTH / 2 - bucket.getWidth() / 2);
-		bucket.setY(20);
+		gingerMan = new Gingerman();
+		gingerMan.setSize(110, 125);
+		gingerMan.setX(WIDTH / 2 - gingerMan.getWidth() / 2);
+		gingerMan.setY(20);
 
 	}
 
 	private void loadSoundAndMusics() {
-		drop = Gdx.audio.newSound(Gdx.files.internal("drop.wav"));
-		rain = Gdx.audio.newMusic(Gdx.files.internal("dancaDaManivela.mp3"));
+		rain = Gdx.audio.newMusic(Gdx.files.internal(Assets.GAME_MUSIC));
 		rain.setLooping(true);
 		rain.play();
-	}
-
-	private void loadImages() {
-		dropImage = new Texture(Gdx.files.internal("droplet2.png"));
-		bucketImage = new Texture(Gdx.files.internal("boneco1.png"));
-		// background = new Texture(Gdx.files.internal("chuva.jpg"));
 	}
 
 	private void loadCamera() {
@@ -87,8 +72,6 @@ public class Biscoitinho extends ApplicationAdapter {
 
 	@Override
 	public void render() {
-		// Gdx.gl.glClearColor(0, 0, 0.2f, 1);
-		// Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		batch.begin();
 		batch.draw(region, 0, 0);
 		batch.end();
@@ -101,8 +84,8 @@ public class Biscoitinho extends ApplicationAdapter {
 	private void renderRaindDrops() {
 		createRaindDrops();
 		batch.begin();
-		for (Rectangle rec : raindrops) {
-			batch.draw(dropImage, rec.x, rec.y);
+		for (DropObject rec : drops) {
+			batch.draw(rec.getDroppable().getDropImage(), rec.x, rec.y);
 		}
 		batch.end();
 	}
@@ -111,35 +94,45 @@ public class Biscoitinho extends ApplicationAdapter {
 		if (TimeUtils.nanoTime() - lastDropTime > 1000000) {
 			spawnRaindrop();
 		}
-		Iterator<Rectangle> it = raindrops.iterator();
+		Iterator<DropObject> it = drops.iterator();
 		while (it.hasNext()) {
-			Rectangle rec = it.next();
+			DropObject rec = it.next();
 			rec.y -= 200 * Gdx.graphics.getDeltaTime();
 			if (rec.y + rec.height < 0) {
 				it.remove();
 			}
-			if (rec.overlaps(bucket)) {
-				rainDropCatcher++;
-				drop.play();
+			if (rec.overlaps(gingerMan)) {
+				gingerMan.setLife(rec.getDroppable().getModifyOfLife());
+				rec.getDroppable().getDropSound().play();
 				it.remove();
-				updateBucket();
+				gingerMan.update();
 			}
 		}
 	}
 
-	private void updateBucket() {
-		bucketImage = new Texture(
-				Gdx.files.internal(imageNames[rainDropCatcher % 5]));
-	}
-
 	private void spawnRaindrop() {
-		Rectangle drop = new Rectangle();
+		DropObject drop = initializeDrop();
 		drop.width = 5;
 		drop.height = 6;
 		drop.x = MathUtils.random(0, WIDTH - drop.width);
 		drop.y = HEIGHT;
-		raindrops.add(drop);
+		drops.add(drop);
 		lastDropTime = TimeUtils.nanoTime();
+	}
+
+	private DropObject initializeDrop() {
+		DropObject drop;
+		if (getRandPercent(5)) {
+			drop = new DropObject(new SugarDrop());
+		} else {
+			drop = new DropObject(new RainDrop());
+		}
+		return drop;
+	}
+
+	public boolean getRandPercent(int percent) {
+		Random rand = new Random();
+		return rand.nextInt(100) <= percent;
 	}
 
 	private void renderPlayer() {
@@ -152,7 +145,7 @@ public class Biscoitinho extends ApplicationAdapter {
 			moveBucketToAccelerometer();
 		}
 		batch.begin();
-		batch.draw(bucketImage, bucket.x, bucket.y);
+		batch.draw(gingerMan.getGingermanImage(), gingerMan.x, gingerMan.y);
 		batch.end();
 
 	}
@@ -161,60 +154,61 @@ public class Biscoitinho extends ApplicationAdapter {
 		Vector3 vector = new Vector3(16 * (Gdx.input.getAccelerometerY() + 10),
 				Gdx.input.getAccelerometerX(), 0);
 		camera.unproject(vector);
-		if (bucket.x < vector.x) {
-			bucket.x += 200 * Gdx.graphics.getDeltaTime();
-			if (bucket.x > vector.x) {
-				bucket.x = vector.x;
+		if (gingerMan.x < vector.x) {
+			gingerMan.x += 200 * Gdx.graphics.getDeltaTime();
+			if (gingerMan.x > vector.x) {
+				gingerMan.x = vector.x;
 			}
-		} else if (bucket.x > vector.x) {
-			bucket.x -= 200 * Gdx.graphics.getDeltaTime();
-			if (bucket.x < vector.x) {
-				bucket.x = vector.x;
+		} else if (gingerMan.x > vector.x) {
+			gingerMan.x -= 200 * Gdx.graphics.getDeltaTime();
+			if (gingerMan.x < vector.x) {
+				gingerMan.x = vector.x;
 			}
 		} else {
 			clicked = false;
 		}
 
-		if (bucket.x > WIDTH - bucket.width) {
-			bucket.x = WIDTH - bucket.width;
+		if (gingerMan.x > WIDTH - gingerMan.width) {
+			gingerMan.x = WIDTH - gingerMan.width;
 		}
-		if (bucket.x < 0) {
-			bucket.x = 0;
+		if (gingerMan.x < 0) {
+			gingerMan.x = 0;
 		}
 	}
 
 	private void moveBucketToTouchLocal() {
 		Vector3 vector = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
 		camera.unproject(vector);
-		if (bucket.x < vector.x) {
-			bucket.x += 200 * Gdx.graphics.getDeltaTime();
-			if (bucket.x > vector.x) {
-				bucket.x = vector.x;
+		if (gingerMan.x < vector.x) {
+			gingerMan.x += 200 * Gdx.graphics.getDeltaTime();
+			if (gingerMan.x > vector.x) {
+				gingerMan.x = vector.x;
 			}
-		} else if (bucket.x > vector.x) {
-			bucket.x -= 200 * Gdx.graphics.getDeltaTime();
-			if (bucket.x < vector.x) {
-				bucket.x = vector.x;
+		} else if (gingerMan.x > vector.x) {
+			gingerMan.x -= 200 * Gdx.graphics.getDeltaTime();
+			if (gingerMan.x < vector.x) {
+				gingerMan.x = vector.x;
 			}
 		} else {
 			clicked = false;
 		}
 
-		if (bucket.x > WIDTH - bucket.width) {
-			bucket.x = WIDTH - bucket.width;
+		if (gingerMan.x > WIDTH - gingerMan.width) {
+			gingerMan.x = WIDTH - gingerMan.width;
 		}
-		if (bucket.x < 0) {
-			bucket.x = 0;
+		if (gingerMan.x < 0) {
+			gingerMan.x = 0;
 		}
 	}
 
 	@Override
 	public void dispose() {
-		dropImage.dispose();
-		bucketImage.dispose();
-		drop.dispose();
 		rain.dispose();
 		batch.dispose();
-
+		gingerMan.getGingermanImage().dispose();
+		for (DropObject drop : drops) {
+			drop.getDroppable().getDropImage().dispose();
+		}
+		region.getTexture().dispose();
 	}
 }
