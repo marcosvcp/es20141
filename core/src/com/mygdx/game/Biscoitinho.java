@@ -8,6 +8,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
@@ -30,10 +31,9 @@ public class Biscoitinho extends ApplicationAdapter {
 
 	private SpriteBatch batch;
 	private OrthographicCamera camera;
-
 	private Array<DropObject> drops;
 	private long lastDropTime;
-
+	private BitmapFont font;
 	private TextureRegion region;
 	private Gingerman gingerMan;
 
@@ -41,6 +41,8 @@ public class Biscoitinho extends ApplicationAdapter {
 
 	@Override
 	public void create() {
+		font = new BitmapFont();
+		font.setColor(1.0f, 1.0f, 1.0f, 1.0f);
 		batch = new SpriteBatch();
 		drops = new Array<DropObject>();
 		loadCamera();
@@ -73,6 +75,8 @@ public class Biscoitinho extends ApplicationAdapter {
 	@Override
 	public void render() {
 		batch.begin();
+		font.draw(batch, "HP :  "
+				+ (gingerMan != null ? gingerMan.getLife() : "0"), 25, 100);
 		batch.draw(region, 0, 0);
 		batch.end();
 		camera.update();
@@ -123,9 +127,9 @@ public class Biscoitinho extends ApplicationAdapter {
 	private DropObject initializeDrop() {
 		DropObject drop;
 		if (getRandPercent(5)) {
-			drop = new DropObject(new SugarDrop());
+			drop = new DropObject(SugarDrop.getInstance());
 		} else {
-			drop = new DropObject(new RainDrop());
+			drop = new DropObject(RainDrop.getInstance());
 		}
 		return drop;
 	}
@@ -206,9 +210,8 @@ public class Biscoitinho extends ApplicationAdapter {
 		rain.dispose();
 		batch.dispose();
 		gingerMan.getGingermanImage().dispose();
-		for (DropObject drop : drops) {
-			drop.getDroppable().getDropImage().dispose();
-		}
+		SugarDrop.getInstance().dispose();
+		RainDrop.getInstance().dispose();
 		region.getTexture().dispose();
 	}
 }

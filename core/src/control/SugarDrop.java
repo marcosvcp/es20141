@@ -8,10 +8,19 @@ public class SugarDrop implements Droppable {
 	private Texture sugarImage;
 	private Sound sugarSound;
 
-	public SugarDrop() {
+	private static SugarDrop instance;
+
+	private SugarDrop() {
 		sugarImage = new Texture(Gdx.files.internal(Assets.SUGAR_DROP_IMAGE));
 		sugarSound = Gdx.audio.newSound(Gdx.files
 				.internal(Assets.SUGAR_DROP_SOUND));
+	}
+
+	public static SugarDrop getInstance() {
+		if (instance == null) {
+			instance = new SugarDrop();
+		}
+		return instance;
 	}
 
 	@Override
@@ -43,5 +52,10 @@ public class SugarDrop implements Droppable {
 
 	public void setSugarSound(Sound sugarSound) {
 		this.sugarSound = sugarSound;
+	}
+
+	@Override
+	public void dispose() {
+		getSugarImage().dispose();
 	}
 }
