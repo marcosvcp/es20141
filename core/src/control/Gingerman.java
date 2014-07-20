@@ -3,6 +3,7 @@ package control;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Rectangle;
+import com.mygdx.game.Biscoitinho;
 
 public class Gingerman extends Rectangle {
 	private Texture gingermanImage;
@@ -22,6 +23,9 @@ public class Gingerman extends Rectangle {
 		imageNames[4] = Assets.GINGERMAN_IMAGE_FIVE;
 		setGingermanImage(new Texture(
 				Gdx.files.internal(Assets.GINGERMAN_IMAGE_ONE)));
+		this.setSize(110, 125);
+		this.setX(Biscoitinho.WIDTH / 2 - this.getWidth() / 2);
+		this.setY(20);
 	}
 
 	public Texture getGingermanImage() {
@@ -29,8 +33,8 @@ public class Gingerman extends Rectangle {
 	}
 
 	public void update() {
-		gingermanImage = new Texture(
-				Gdx.files.internal(imageNames[getLife() % 5]));
+		gingermanImage = new Texture(Gdx.files.internal(imageNames[Math
+				.abs(getLife()) % 5]));
 	}
 
 	public void setGingermanImage(Texture gingermanImage) {

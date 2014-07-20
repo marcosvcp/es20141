@@ -20,8 +20,12 @@ import control.Assets;
 import control.DropObject;
 import control.Gingerman;
 import control.RainDrop;
+import control.RainDropLarge;
 import control.SugarDrop;
 
+/**
+ * Classe principal do Jogo
+ */
 public class Biscoitinho extends ApplicationAdapter {
 
 	public static final int WIDTH = 800;
@@ -37,36 +41,43 @@ public class Biscoitinho extends ApplicationAdapter {
 	private TextureRegion region;
 	private Gingerman gingerMan;
 
-	private Music rain;
+	private Music crankDance;
 
 	@Override
 	public void create() {
 		font = new BitmapFont();
+		font.scale(2.5f);
 		font.setColor(1.0f, 1.0f, 1.0f, 1.0f);
 		batch = new SpriteBatch();
 		drops = new Array<DropObject>();
 		loadCamera();
 		loadSoundAndMusics();
 		loadElements();
-		spawnRaindrop();
+		spawnDrop();
 		Texture texture = new Texture(Gdx.files.internal("bg.jpg"));
 		region = new TextureRegion(texture, 0, 0, WIDTH, HEIGHT);
 	}
 
+	/**
+	 * Carrega o personagem principal {@code gingerMan}.
+	 */
 	private void loadElements() {
 		gingerMan = new Gingerman();
-		gingerMan.setSize(110, 125);
-		gingerMan.setX(WIDTH / 2 - gingerMan.getWidth() / 2);
-		gingerMan.setY(20);
 
 	}
 
+	/**
+	 * Carrega a música do jogo {@code crankDance}.
+	 */
 	private void loadSoundAndMusics() {
-		rain = Gdx.audio.newMusic(Gdx.files.internal(Assets.GAME_MUSIC));
-		rain.setLooping(true);
-		rain.play();
+		crankDance = Gdx.audio.newMusic(Gdx.files.internal(Assets.GAME_MUSIC));
+		crankDance.setLooping(true);
+		crankDance.play();
 	}
 
+	/**
+	 * Carrega a {@code camera}.
+	 */
 	private void loadCamera() {
 		camera = new OrthographicCamera();
 		camera.setToOrtho(false, WIDTH, HEIGHT);
@@ -75,18 +86,20 @@ public class Biscoitinho extends ApplicationAdapter {
 	@Override
 	public void render() {
 		batch.begin();
-		font.draw(batch, "HP :  "
-				+ (gingerMan != null ? gingerMan.getLife() : "0"), 25, 100);
 		batch.draw(region, 0, 0);
+		font.draw(batch, "Crashes :  " + gingerMan.getLife(), 25, 400);
 		batch.end();
 		camera.update();
 		batch.setProjectionMatrix(camera.combined);
 		renderPlayer();
-		renderRaindDrops();
+		renderDrops();
 	}
 
-	private void renderRaindDrops() {
-		createRaindDrops();
+	/**
+	 * Renderiza todas as gotas e grãos de açucar criados.
+	 */
+	private void renderDrops() {
+		createDrops();
 		batch.begin();
 		for (DropObject rec : drops) {
 			batch.draw(rec.getDroppable().getDropImage(), rec.x, rec.y);
@@ -94,27 +107,33 @@ public class Biscoitinho extends ApplicationAdapter {
 		batch.end();
 	}
 
-	private void createRaindDrops() {
+	/**
+	 * Cria o cenário de gotas de chuva e grãos de açucar.
+	 */
+	private void createDrops() {
 		if (TimeUtils.nanoTime() - lastDropTime > 1000000) {
-			spawnRaindrop();
+			spawnDrop();
 		}
 		Iterator<DropObject> it = drops.iterator();
 		while (it.hasNext()) {
-			DropObject rec = it.next();
-			rec.y -= 200 * Gdx.graphics.getDeltaTime();
-			if (rec.y + rec.height < 0) {
+			DropObject drop = it.next();
+			drop.y -= 200 * Gdx.graphics.getDeltaTime();
+			if (drop.y + drop.height < 0) {
 				it.remove();
 			}
-			if (rec.overlaps(gingerMan)) {
-				gingerMan.setLife(rec.getDroppable().getModifyOfLife());
-				rec.getDroppable().getDropSound().play();
+			if (drop.overlaps(gingerMan)) {
+				gingerMan.setLife(drop.getDroppable().getModifyOfLife());
+				drop.getDroppable().getDropSound().play();
 				it.remove();
 				gingerMan.update();
 			}
 		}
 	}
 
-	private void spawnRaindrop() {
+	/**
+	 * Renderiza o objeto escolhido em {@link Biscoitinho#initializeDrop}.
+	 */
+	private void spawnDrop() {
 		DropObject drop = initializeDrop();
 		drop.width = 5;
 		drop.height = 6;
@@ -124,29 +143,40 @@ public class Biscoitinho extends ApplicationAdapter {
 		lastDropTime = TimeUtils.nanoTime();
 	}
 
+	/**
+	 * Inicializa qual tipo de objeto vai cair.
+	 */
 	private DropObject initializeDrop() {
 		DropObject drop;
 		if (getRandPercent(5)) {
 			drop = new DropObject(SugarDrop.getInstance());
+		} else if (getRandPercent(1)) {
+			drop = new DropObject(RainDropLarge.getInstance());
 		} else {
 			drop = new DropObject(RainDrop.getInstance());
 		}
 		return drop;
 	}
 
+	/**
+	 * Retorna se um certo evento deve ocorrer de acordo com a {@code percent}.
+	 */
 	public boolean getRandPercent(int percent) {
 		Random rand = new Random();
 		return rand.nextInt(100) <= percent;
 	}
 
+	/**
+	 * Desenha o {@code gingerman}.
+	 */
 	private void renderPlayer() {
 		if (Gdx.input.isTouched()) {
 			clicked = true;
 		}
 		if (clicked) {
-			moveBucketToTouchLocal();
+			moveGingerManToTouchLocal();
 		} else {
-			moveBucketToAccelerometer();
+			moveGingermanToAccelerometer();
 		}
 		batch.begin();
 		batch.draw(gingerMan.getGingermanImage(), gingerMan.x, gingerMan.y);
@@ -154,7 +184,10 @@ public class Biscoitinho extends ApplicationAdapter {
 
 	}
 
-	private void moveBucketToAccelerometer() {
+	/**
+	 * Move o {@code gingerman} de acordo com o acelerometro.
+	 */
+	private void moveGingermanToAccelerometer() {
 		Vector3 vector = new Vector3(16 * (Gdx.input.getAccelerometerY() + 10),
 				Gdx.input.getAccelerometerX(), 0);
 		camera.unproject(vector);
@@ -180,7 +213,10 @@ public class Biscoitinho extends ApplicationAdapter {
 		}
 	}
 
-	private void moveBucketToTouchLocal() {
+	/**
+	 * Move o {@code gingerman} para o local tocado.
+	 */
+	private void moveGingerManToTouchLocal() {
 		Vector3 vector = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
 		camera.unproject(vector);
 		if (gingerMan.x < vector.x) {
@@ -207,11 +243,12 @@ public class Biscoitinho extends ApplicationAdapter {
 
 	@Override
 	public void dispose() {
-		rain.dispose();
+		crankDance.dispose();
 		batch.dispose();
 		gingerMan.getGingermanImage().dispose();
 		SugarDrop.getInstance().dispose();
 		RainDrop.getInstance().dispose();
+		RainDropLarge.getInstance().dispose();
 		region.getTexture().dispose();
 	}
 }

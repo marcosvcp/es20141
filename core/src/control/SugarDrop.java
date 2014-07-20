@@ -4,13 +4,16 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 
+/**
+ * Classe que representa um grão de Açucar.
+ */
 public class SugarDrop implements Droppable {
 	private Texture sugarImage;
 	private Sound sugarSound;
 
 	private static SugarDrop instance;
 
-	private SugarDrop() {
+	public SugarDrop() {
 		sugarImage = new Texture(Gdx.files.internal(Assets.SUGAR_DROP_IMAGE));
 		sugarSound = Gdx.audio.newSound(Gdx.files
 				.internal(Assets.SUGAR_DROP_SOUND));
@@ -25,7 +28,7 @@ public class SugarDrop implements Droppable {
 
 	@Override
 	public int getModifyOfLife() {
-		return -1;
+		return -10;
 	}
 
 	@Override

@@ -7,28 +7,28 @@ import com.badlogic.gdx.graphics.Texture;
 /**
  * Classe que representa uma gota de Chuva.
  */
-public class RainDrop implements Droppable {
+public class RainDropLarge implements Droppable {
 	private Sound rainDropSound;
-	private static RainDrop instance;
+	private static RainDropLarge instance;
 	private Texture rainDropImage;
 
-	private RainDrop() {
+	private RainDropLarge() {
 		rainDropSound = Gdx.audio.newSound(Gdx.files
-				.internal(Assets.RAIN_DROP_SOUND));
+				.internal(Assets.RAIN_DROP_SOUND_LARGE));
 		rainDropImage = new Texture(
-				Gdx.files.internal(Assets.RAIN_DROP_IMAGE_SMALL));
+				Gdx.files.internal(Assets.RAIN_DROP_IMAGE_LARGE));
 	}
 
-	public static RainDrop getInstance() {
+	public static RainDropLarge getInstance() {
 		if (instance == null) {
-			instance = new RainDrop();
+			instance = new RainDropLarge();
 		}
 		return instance;
 	}
 
 	@Override
 	public int getModifyOfLife() {
-		return 1;
+		return 10;
 	}
 
 	@Override
