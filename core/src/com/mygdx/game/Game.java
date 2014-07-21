@@ -26,7 +26,7 @@ import control.SugarDrop;
 /**
  * Classe principal do Jogo
  */
-public class Biscoitinho extends ApplicationAdapter {
+public class Game extends ApplicationAdapter {
 
 	public static final int WIDTH = 800;
 	public static final int HEIGHT = 480;
@@ -131,7 +131,7 @@ public class Biscoitinho extends ApplicationAdapter {
 	}
 
 	/**
-	 * Renderiza o objeto escolhido em {@link Biscoitinho#initializeDrop}.
+	 * Renderiza o objeto escolhido em {@link Game#initializeDrop}.
 	 */
 	private void spawnDrop() {
 		DropObject drop = initializeDrop();
@@ -178,6 +178,12 @@ public class Biscoitinho extends ApplicationAdapter {
 		} else {
 			moveGingermanToAccelerometer();
 		}
+		if (gingerMan.x > WIDTH - gingerMan.width) {
+			gingerMan.x = WIDTH - gingerMan.width;
+		}
+		if (gingerMan.x < 0) {
+			gingerMan.x = 0;
+		}
 		batch.begin();
 		batch.draw(gingerMan.getGingermanImage(), gingerMan.x, gingerMan.y);
 		batch.end();
@@ -188,7 +194,8 @@ public class Biscoitinho extends ApplicationAdapter {
 	 * Move o {@code gingerman} de acordo com o acelerometro.
 	 */
 	private void moveGingermanToAccelerometer() {
-		Vector3 vector = new Vector3(16 * (Gdx.input.getAccelerometerY() + 10),
+		int constant = Gdx.graphics.getHeight()/10;
+		Vector3 vector = new Vector3(constant * (Gdx.input.getAccelerometerY() + 10),
 				Gdx.input.getAccelerometerX(), 0);
 		camera.unproject(vector);
 		if (gingerMan.x < vector.x) {
@@ -205,12 +212,6 @@ public class Biscoitinho extends ApplicationAdapter {
 			clicked = false;
 		}
 
-		if (gingerMan.x > WIDTH - gingerMan.width) {
-			gingerMan.x = WIDTH - gingerMan.width;
-		}
-		if (gingerMan.x < 0) {
-			gingerMan.x = 0;
-		}
 	}
 
 	/**
@@ -233,12 +234,7 @@ public class Biscoitinho extends ApplicationAdapter {
 			clicked = false;
 		}
 
-		if (gingerMan.x > WIDTH - gingerMan.width) {
-			gingerMan.x = WIDTH - gingerMan.width;
-		}
-		if (gingerMan.x < 0) {
-			gingerMan.x = 0;
-		}
+		
 	}
 
 	@Override

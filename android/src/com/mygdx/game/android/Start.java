@@ -4,7 +4,7 @@ import android.os.Bundle;
 
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
-import com.mygdx.game.Biscoitinho;
+import com.mygdx.game.Game;
 
 public class Start extends AndroidApplication {
 	
@@ -14,6 +14,6 @@ public class Start extends AndroidApplication {
 		AndroidApplicationConfiguration cfg = new AndroidApplicationConfiguration();
 		cfg.useAccelerometer = true;
 	    cfg.useCompass = false;
-		initialize(new Biscoitinho(), cfg);
+		initialize(new Game(), cfg);
 	}
 }
