@@ -22,4 +22,8 @@ public class DropObject extends Rectangle {
 	public void setDroppable(Droppable objectDroppable) {
 		this.droppable = objectDroppable;
 	}
+	
+	public void playSound(){
+		droppable.getDropSound().play();
+	}
 }

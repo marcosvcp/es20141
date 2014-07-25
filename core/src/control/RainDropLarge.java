@@ -13,10 +13,8 @@ public class RainDropLarge implements Droppable {
 	private Texture rainDropImage;
 
 	private RainDropLarge() {
-		rainDropSound = Gdx.audio.newSound(Gdx.files
-				.internal(Assets.RAIN_DROP_SOUND_LARGE));
-		rainDropImage = new Texture(
-				Gdx.files.internal(Assets.RAIN_DROP_IMAGE_LARGE));
+		rainDropSound = Gdx.audio.newSound(Gdx.files.internal(Assets.RAIN_DROP_SOUND_LARGE));
+		rainDropImage = new Texture(Gdx.files.internal(Assets.RAIN_DROP_IMAGE_LARGE));
 	}
 
 	public static RainDropLarge getInstance() {
@@ -28,7 +26,7 @@ public class RainDropLarge implements Droppable {
 
 	@Override
 	public int getModifyOfLife() {
-		return 10;
+		return -10;
 	}
 
 	@Override
@@ -65,4 +63,5 @@ public class RainDropLarge implements Droppable {
 	public void dispose() {
 		getRainDropImage().dispose();
 	}
+
 }

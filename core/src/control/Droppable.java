@@ -24,4 +24,5 @@ public interface Droppable {
 	 * Retorna o som do objeto.
 	 */
 	Sound getDropSound();
+
 }

@@ -11,7 +11,10 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.TimeUtils;
@@ -32,30 +35,33 @@ public class Game extends ApplicationAdapter {
 	public static final int HEIGHT = 480;
 
 	private boolean clicked;
-
+	
+	private ShapeRenderer shape;
 	private SpriteBatch batch;
 	private OrthographicCamera camera;
 	private Array<DropObject> drops;
 	private long lastDropTime;
 	private BitmapFont font;
-	private TextureRegion region;
+	private TextureRegion background;
 	private Gingerman gingerMan;
 
 	private Music crankDance;
 
 	@Override
 	public void create() {
+		Gdx.app.log(Gdx.graphics.getWidth() + "", "HEIGHT");
 		font = new BitmapFont();
 		font.scale(2.5f);
 		font.setColor(1.0f, 1.0f, 1.0f, 1.0f);
 		batch = new SpriteBatch();
+		shape = new ShapeRenderer();
 		drops = new Array<DropObject>();
 		loadCamera();
 		loadSoundAndMusics();
 		loadElements();
 		spawnDrop();
 		Texture texture = new Texture(Gdx.files.internal("bg.jpg"));
-		region = new TextureRegion(texture, 0, 0, WIDTH, HEIGHT);
+		background = new TextureRegion(texture, 0, 0, WIDTH, HEIGHT);
 	}
 
 	/**
@@ -86,11 +92,12 @@ public class Game extends ApplicationAdapter {
 	@Override
 	public void render() {
 		batch.begin();
-		batch.draw(region, 0, 0);
+		batch.draw(background, 0, 0);
 		font.draw(batch, "Crashes :  " + gingerMan.getLife(), 25, 400);
 		batch.end();
 		camera.update();
 		batch.setProjectionMatrix(camera.combined);
+		shape.setProjectionMatrix(camera.combined);
 		renderPlayer();
 		renderDrops();
 	}
@@ -122,11 +129,12 @@ public class Game extends ApplicationAdapter {
 				it.remove();
 			}
 			if (drop.overlaps(gingerMan)) {
-				gingerMan.setLife(drop.getDroppable().getModifyOfLife());
-				drop.getDroppable().getDropSound().play();
-				it.remove();
+				drop.playSound();
 				gingerMan.update();
+				gingerMan.updateLife(drop.getDroppable().getModifyOfLife());
+				it.remove();
 			}
+			
 		}
 	}
 
@@ -134,10 +142,10 @@ public class Game extends ApplicationAdapter {
 	 * Renderiza o objeto escolhido em {@link Game#initializeDrop}.
 	 */
 	private void spawnDrop() {
-		DropObject drop = initializeDrop();
-		drop.width = 5;
-		drop.height = 6;
-		drop.x = MathUtils.random(0, WIDTH - drop.width);
+		DropObject drop = createDrop();
+		Texture dropImage = drop.getDroppable().getDropImage();
+		float imageWidth = dropImage.getWidth();
+		drop.x = MathUtils.random(imageWidth, WIDTH - imageWidth);
 		drop.y = HEIGHT;
 		drops.add(drop);
 		lastDropTime = TimeUtils.nanoTime();
@@ -146,7 +154,7 @@ public class Game extends ApplicationAdapter {
 	/**
 	 * Inicializa qual tipo de objeto vai cair.
 	 */
-	private DropObject initializeDrop() {
+	private DropObject createDrop() {
 		DropObject drop;
 		if (getRandPercent(5)) {
 			drop = new DropObject(SugarDrop.getInstance());
@@ -184,10 +192,21 @@ public class Game extends ApplicationAdapter {
 		if (gingerMan.x < 0) {
 			gingerMan.x = 0;
 		}
+
+		renderLife();
+		
 		batch.begin();
 		batch.draw(gingerMan.getGingermanImage(), gingerMan.x, gingerMan.y);
 		batch.end();
 
+	}
+
+	private void renderLife() {
+		shape.begin(ShapeType.Filled);
+		Rectangle visualRectangle = gingerMan.getVisualLifeRectangle();
+		shape.setColor(gingerMan.getColor());
+		shape.rect(visualRectangle.x, visualRectangle.y, visualRectangle.width, visualRectangle.height);
+		shape.end();
 	}
 
 	/**
@@ -245,6 +264,6 @@ public class Game extends ApplicationAdapter {
 		SugarDrop.getInstance().dispose();
 		RainDrop.getInstance().dispose();
 		RainDropLarge.getInstance().dispose();
-		region.getTexture().dispose();
+		background.getTexture().dispose();
 	}
 }
