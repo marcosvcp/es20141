@@ -10,12 +10,18 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.ui.Button;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.TimeUtils;
 
@@ -35,7 +41,14 @@ public class Game extends ApplicationAdapter {
 	public static final int HEIGHT = 480;
 
 	private boolean clicked;
-	
+
+	public enum State {
+		Running, Paused, GameOver
+	}
+
+	private long totalTime = 0L;
+	private boolean gameOver;
+	private State state = State.Running;
 	private ShapeRenderer shape;
 	private SpriteBatch batch;
 	private OrthographicCamera camera;
@@ -45,11 +58,33 @@ public class Game extends ApplicationAdapter {
 	private TextureRegion background;
 	private Gingerman gingerMan;
 
+	private long initMilis;
 	private Music crankDance;
+	private Button pause, mute, restart;
 
 	@Override
 	public void create() {
+		TextureAtlas atlas = new TextureAtlas();
+		Skin skin = new Skin();
+		skin.addRegions(atlas);
 		Gdx.app.log(Gdx.graphics.getWidth() + "", "HEIGHT");
+		TextButtonStyle stylePlay = new TextButtonStyle();
+		stylePlay.up = skin.getDrawable("7layer");
+		stylePlay.down = skin.getDrawable("7layer");
+		restart = new Button(stylePlay);
+
+		restart.addListener(new InputListener() {
+			@Override
+			public boolean touchDown(InputEvent event, float x, float y,
+					int pointer, int button) {
+				loadCamera();
+				loadSoundAndMusics();
+				loadElements();
+				spawnDrop();
+				return super.touchDown(event, x, y, pointer, button);
+			}
+		});
+
 		font = new BitmapFont();
 		font.scale(2.5f);
 		font.setColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -62,6 +97,7 @@ public class Game extends ApplicationAdapter {
 		spawnDrop();
 		Texture texture = new Texture(Gdx.files.internal("bg.jpg"));
 		background = new TextureRegion(texture, 0, 0, WIDTH, HEIGHT);
+		initMilis = TimeUtils.millis();
 	}
 
 	/**
@@ -91,6 +127,37 @@ public class Game extends ApplicationAdapter {
 
 	@Override
 	public void render() {
+		switch (state) {
+		case Running:
+			updateAll();
+			break;
+		case GameOver:
+			gameOver();
+			gameOver = true;
+		case Paused:
+			break;
+		default:
+			break;
+		}
+		renderPlayer();
+		renderDrops();
+	}
+
+	private void gameOver() {
+		if (!gameOver) {
+			totalTime = (TimeUtils.millis() - initMilis) / 1000;
+		}
+		batch.begin();
+		batch.draw(background, 0, 0);
+		font.draw(batch, ("Game Over ! Your Time: " + totalTime + " s"), 25,
+				400);
+		batch.end();
+		camera.update();
+		batch.setProjectionMatrix(camera.combined);
+		shape.setProjectionMatrix(camera.combined);
+	}
+
+	private void updateAll() {
 		batch.begin();
 		batch.draw(background, 0, 0);
 		font.draw(batch, "Crashes :  " + gingerMan.getLife(), 25, 400);
@@ -98,8 +165,6 @@ public class Game extends ApplicationAdapter {
 		camera.update();
 		batch.setProjectionMatrix(camera.combined);
 		shape.setProjectionMatrix(camera.combined);
-		renderPlayer();
-		renderDrops();
 	}
 
 	/**
@@ -132,9 +197,12 @@ public class Game extends ApplicationAdapter {
 				drop.playSound();
 				gingerMan.update();
 				gingerMan.updateLife(drop.getDroppable().getModifyOfLife());
+				if (!gingerMan.isAlive()) {
+					this.state = State.GameOver;
+				}
 				it.remove();
 			}
-			
+
 		}
 	}
 
@@ -194,7 +262,7 @@ public class Game extends ApplicationAdapter {
 		}
 
 		renderLife();
-		
+
 		batch.begin();
 		batch.draw(gingerMan.getGingermanImage(), gingerMan.x, gingerMan.y);
 		batch.end();
@@ -205,7 +273,8 @@ public class Game extends ApplicationAdapter {
 		shape.begin(ShapeType.Filled);
 		Rectangle visualRectangle = gingerMan.getVisualLifeRectangle();
 		shape.setColor(gingerMan.getColor());
-		shape.rect(visualRectangle.x, visualRectangle.y, visualRectangle.width, visualRectangle.height);
+		shape.rect(visualRectangle.x, visualRectangle.y, visualRectangle.width,
+				visualRectangle.height);
 		shape.end();
 	}
 
@@ -213,23 +282,24 @@ public class Game extends ApplicationAdapter {
 	 * Move o {@code gingerman} de acordo com o acelerometro.
 	 */
 	private void moveGingermanToAccelerometer() {
-		int constant = Gdx.graphics.getHeight()/10;
-		Vector3 vector = new Vector3(constant * (Gdx.input.getAccelerometerY() + 10),
-				Gdx.input.getAccelerometerX(), 0);
-		camera.unproject(vector);
-		if (gingerMan.x < vector.x) {
-			gingerMan.x += 200 * Gdx.graphics.getDeltaTime();
-			if (gingerMan.x > vector.x) {
-				gingerMan.x = vector.x;
-			}
-		} else if (gingerMan.x > vector.x) {
-			gingerMan.x -= 200 * Gdx.graphics.getDeltaTime();
-			if (gingerMan.x < vector.x) {
-				gingerMan.x = vector.x;
-			}
-		} else {
-			clicked = false;
-		}
+		// int constant = Gdx.graphics.getHeight() / 10;
+		// Vector3 vector = new Vector3(constant
+		// * (Gdx.input.getAccelerometerY() + 10),
+		// Gdx.input.getAccelerometerX(), 0);
+		// camera.unproject(vector);
+		// if (gingerMan.x < vector.x) {
+		// gingerMan.x += 200 * Gdx.graphics.getDeltaTime();
+		// if (gingerMan.x > vector.x) {
+		// gingerMan.x = vector.x;
+		// }
+		// } else if (gingerMan.x > vector.x) {
+		// gingerMan.x -= 200 * Gdx.graphics.getDeltaTime();
+		// if (gingerMan.x < vector.x) {
+		// gingerMan.x = vector.x;
+		// }
+		// } else {
+		// clicked = false;
+		// }
 
 	}
 
@@ -253,7 +323,6 @@ public class Game extends ApplicationAdapter {
 			clicked = false;
 		}
 
-		
 	}
 
 	@Override
