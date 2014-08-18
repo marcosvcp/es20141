@@ -64,27 +64,27 @@ public class Game extends ApplicationAdapter {
 
 	@Override
 	public void create() {
-		TextureAtlas atlas = new TextureAtlas();
-		Skin skin = new Skin();
-		skin.addRegions(atlas);
+//		TextureAtlas atlas = new TextureAtlas();
+//		Skin skin = new Skin();
+//		skin.addRegions(atlas);
+		// TextButtonStyle stylePlay = new TextButtonStyle();
+		// stylePlay.up = skin.getDrawable("7layer");
+		// stylePlay.down = skin.getDrawable("7layer");
+		// restart = new Button(stylePlay);
+		//
+		// restart.addListener(new InputListener() {
+		// @Override
+		// public boolean touchDown(InputEvent event, float x, float y,
+		// int pointer, int button) {
+		// loadCamera();
+		// loadSoundAndMusics();
+		// loadElements();
+		// spawnDrop();
+		// return super.touchDown(event, x, y, pointer, button);
+		// }
+		// });
+
 		Gdx.app.log(Gdx.graphics.getWidth() + "", "HEIGHT");
-		TextButtonStyle stylePlay = new TextButtonStyle();
-		stylePlay.up = skin.getDrawable("7layer");
-		stylePlay.down = skin.getDrawable("7layer");
-		restart = new Button(stylePlay);
-
-		restart.addListener(new InputListener() {
-			@Override
-			public boolean touchDown(InputEvent event, float x, float y,
-					int pointer, int button) {
-				loadCamera();
-				loadSoundAndMusics();
-				loadElements();
-				spawnDrop();
-				return super.touchDown(event, x, y, pointer, button);
-			}
-		});
-
 		font = new BitmapFont();
 		font.scale(2.5f);
 		font.setColor(1.0f, 1.0f, 1.0f, 1.0f);
