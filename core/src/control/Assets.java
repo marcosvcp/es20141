@@ -7,6 +7,8 @@ public class Assets {
 	public static final String RAIN_DROP_SOUND = "drop.wav";
 	public static final String RAIN_DROP_IMAGE_SMALL = "droplet2.png";
 	public static final String RAIN_DROP_IMAGE_LARGE = "droplet.png";
+	public static final String JELLY_DROP_IMAGE_LARGE = "jujuba.png";
+	public static final String JELLY_DROP_SOUND = "jujuba.mp3";
 	public static final String SUGAR_DROP_SOUND = "sugar.mp3";
 	public static final String SUGAR_DROP_IMAGE = "sugar.png";
 	public static final String GAME_MUSIC = "dancaDaManivela.mp3";

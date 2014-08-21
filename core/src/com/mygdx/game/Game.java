@@ -10,24 +10,20 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.scenes.scene2d.ui.Button;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.TimeUtils;
 
 import control.Assets;
 import control.DropObject;
 import control.Gingerman;
+import control.Jellybean;
+import control.OverlapTester;
 import control.RainDrop;
 import control.RainDropLarge;
 import control.SugarDrop;
@@ -46,6 +42,10 @@ public class Game extends ApplicationAdapter {
 		Running, Paused, GameOver
 	}
 
+	private Vector3 touchPoint;
+	private Rectangle restartBounds;
+
+	private final int TIME_TO_SPAWN = 1000000;
 	private long totalTime = 0L;
 	private boolean gameOver;
 	private State state = State.Running;
@@ -60,30 +60,11 @@ public class Game extends ApplicationAdapter {
 
 	private long initMilis;
 	private Music crankDance;
-	private Button pause, mute, restart;
 
 	@Override
 	public void create() {
-//		TextureAtlas atlas = new TextureAtlas();
-//		Skin skin = new Skin();
-//		skin.addRegions(atlas);
-		// TextButtonStyle stylePlay = new TextButtonStyle();
-		// stylePlay.up = skin.getDrawable("7layer");
-		// stylePlay.down = skin.getDrawable("7layer");
-		// restart = new Button(stylePlay);
-		//
-		// restart.addListener(new InputListener() {
-		// @Override
-		// public boolean touchDown(InputEvent event, float x, float y,
-		// int pointer, int button) {
-		// loadCamera();
-		// loadSoundAndMusics();
-		// loadElements();
-		// spawnDrop();
-		// return super.touchDown(event, x, y, pointer, button);
-		// }
-		// });
-
+		restartBounds = new Rectangle(10, 240, 300, 40);
+		touchPoint = new Vector3();
 		Gdx.app.log(Gdx.graphics.getWidth() + "", "HEIGHT");
 		font = new BitmapFont();
 		font.scale(2.5f);
@@ -139,8 +120,30 @@ public class Game extends ApplicationAdapter {
 		default:
 			break;
 		}
+		restartButton();
 		renderPlayer();
 		renderDrops();
+	}
+
+	private void restartButton() {
+		batch.begin();
+		font.draw(batch, "Restart", 10, 300);
+		batch.end();
+		if (Gdx.input.justTouched()) {
+			camera.unproject(touchPoint.set(Gdx.input.getX(), Gdx.input.getY(),
+					0));
+
+			if (OverlapTester.pointInRectangle(restartBounds, touchPoint.x,
+					touchPoint.y)) {
+				loadCamera();
+				loadElements();
+				drops.clear();
+				initMilis = TimeUtils.millis();
+				state = State.Running;
+				gameOver = false;
+				return;
+			}
+		}
 	}
 
 	private void gameOver() {
@@ -183,7 +186,7 @@ public class Game extends ApplicationAdapter {
 	 * Cria o cenário de gotas de chuva e grãos de açucar.
 	 */
 	private void createDrops() {
-		if (TimeUtils.nanoTime() - lastDropTime > 1000000) {
+		if (TimeUtils.nanoTime() - lastDropTime > TIME_TO_SPAWN) {
 			spawnDrop();
 		}
 		Iterator<DropObject> it = drops.iterator();
@@ -211,6 +214,10 @@ public class Game extends ApplicationAdapter {
 	 */
 	private void spawnDrop() {
 		DropObject drop = createDrop();
+		spawnDrop(drop);
+	}
+
+	private void spawnDrop(DropObject drop) {
 		Texture dropImage = drop.getDroppable().getDropImage();
 		float imageWidth = dropImage.getWidth();
 		drop.x = MathUtils.random(imageWidth, WIDTH - imageWidth);
@@ -227,6 +234,9 @@ public class Game extends ApplicationAdapter {
 		if (getRandPercent(5)) {
 			drop = new DropObject(SugarDrop.getInstance());
 		} else if (getRandPercent(1)) {
+			if (getRandPercent(5)) {
+				spawnDrop(new DropObject(Jellybean.getInstance()));
+			}
 			drop = new DropObject(RainDropLarge.getInstance());
 		} else {
 			drop = new DropObject(RainDrop.getInstance());
@@ -333,6 +343,7 @@ public class Game extends ApplicationAdapter {
 		SugarDrop.getInstance().dispose();
 		RainDrop.getInstance().dispose();
 		RainDropLarge.getInstance().dispose();
+		Jellybean.getInstance().dispose();
 		background.getTexture().dispose();
 	}
 }

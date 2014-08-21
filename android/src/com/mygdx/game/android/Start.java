@@ -7,13 +7,13 @@ import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.mygdx.game.Game;
 
 public class Start extends AndroidApplication {
-	
+
 	@Override
-	protected void onCreate (Bundle savedInstanceState) {
+	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		AndroidApplicationConfiguration cfg = new AndroidApplicationConfiguration();
 		cfg.useAccelerometer = true;
-	    cfg.useCompass = false;
+		cfg.useCompass = false;
 		initialize(new Game(), cfg);
 	}
 }
