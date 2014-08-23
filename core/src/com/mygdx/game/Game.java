@@ -6,6 +6,7 @@ import java.util.Random;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -42,10 +43,14 @@ public class Game extends ApplicationAdapter {
 		Running, Paused, GameOver
 	}
 
+	// Buttons
 	private Vector3 touchPoint;
 	private Rectangle restartBounds;
+	private Rectangle muteBounds;
+	private Rectangle pauseBounds;
 
-	private final int TIME_TO_SPAWN = 1000000;
+	// In nanoseconds
+	private final int TIME_TO_SPAWN_NEW_DROP = 1000000;
 	private long totalTime = 0L;
 	private boolean gameOver;
 	private State state = State.Running;
@@ -57,18 +62,15 @@ public class Game extends ApplicationAdapter {
 	private BitmapFont font;
 	private TextureRegion background;
 	private Gingerman gingerMan;
-
+	private boolean muted = false;
 	private long initMilis;
 	private Music crankDance;
+	private int fontScaleRectangleMenuItens;
 
 	@Override
 	public void create() {
-		restartBounds = new Rectangle(10, 240, 300, 40);
-		touchPoint = new Vector3();
 		Gdx.app.log(Gdx.graphics.getWidth() + "", "HEIGHT");
-		font = new BitmapFont();
-		font.scale(2.5f);
-		font.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+		createButtonsAndSetFont();
 		batch = new SpriteBatch();
 		shape = new ShapeRenderer();
 		drops = new Array<DropObject>();
@@ -76,9 +78,42 @@ public class Game extends ApplicationAdapter {
 		loadSoundAndMusics();
 		loadElements();
 		spawnDrop();
-		Texture texture = new Texture(Gdx.files.internal("bg.jpg"));
-		background = new TextureRegion(texture, 0, 0, WIDTH, HEIGHT);
+		Texture texture = new Texture(
+				Gdx.files.internal(Assets.BACKGROUND_IMAGE));
+		background = new TextureRegion(texture, Assets.ZERO, Assets.ZERO,
+				WIDTH, HEIGHT);
 		initMilis = TimeUtils.millis();
+	}
+
+	private void createButtonsAndSetFont() {
+		final int mediumScaleTextWidth = 120;
+		final int offSetButtons = 210;
+		final float FONT_SCALE = 1.5f;
+		final int initialXRectangle = 10;
+		int numberOfButtons = 0;
+		fontScaleRectangleMenuItens = (int) (FONT_SCALE * 16);
+
+		restartBounds = new Rectangle(initialXRectangle
+				+ (numberOfButtons * offSetButtons), HEIGHT - 50,
+				mediumScaleTextWidth + 20, fontScaleRectangleMenuItens);
+
+		numberOfButtons++;
+
+		muteBounds = new Rectangle(initialXRectangle
+				+ (numberOfButtons * offSetButtons), HEIGHT - 50,
+				mediumScaleTextWidth, fontScaleRectangleMenuItens);
+
+		numberOfButtons++;
+
+		pauseBounds = new Rectangle(initialXRectangle
+				+ (numberOfButtons * offSetButtons), HEIGHT - 50,
+				mediumScaleTextWidth, fontScaleRectangleMenuItens);
+
+		numberOfButtons++;
+		touchPoint = new Vector3();
+		font = new BitmapFont();
+		font.scale(FONT_SCALE);
+		font.setColor(Color.WHITE);
 	}
 
 	/**
@@ -115,23 +150,96 @@ public class Game extends ApplicationAdapter {
 		case GameOver:
 			gameOver();
 			gameOver = true;
+			break;
 		case Paused:
+			updateAll();
 			break;
 		default:
 			break;
 		}
-		restartButton();
+		renderButtons();
 		renderPlayer();
-		renderDrops();
+		if (!isPaused()) {
+			renderDrops();
+		}
+	}
+
+	private void renderButtons() {
+		restartButton();
+		muteButton();
+		pauseButton();
+	}
+
+	private void mute() {
+		this.muted = true;
+		crankDance.pause();
+	}
+
+	private void unMute() {
+		this.muted = false;
+		crankDance.play();
+	}
+
+	private void pauseButton() {
+		batch.begin();
+		font.setColor(Color.MAROON);
+		if (isPaused()) {
+			font.setColor(Color.DARK_GRAY);
+		}
+		font.draw(batch, "Pause", 430, HEIGHT);
+		batch.end();
+		font.setColor(Color.WHITE);
+		if (Gdx.input.justTouched()) {
+			camera.unproject(touchPoint.set(Gdx.input.getX(), Gdx.input.getY(),
+					Assets.ZERO));
+
+			if (OverlapTester.pointInRectangle(pauseBounds, touchPoint.x,
+					touchPoint.y)) {
+				state = isPaused() ? State.Running : State.Paused;
+				return;
+			}
+		}
+	}
+
+	private boolean isPaused() {
+		return state == State.Paused;
+	}
+
+	private void muteButton() {
+		batch.begin();
+		if (muted) {
+			font.setColor(Color.GRAY);
+		}
+		font.draw(batch, "Mute", 220, HEIGHT);
+		batch.end();
+		font.setColor(Color.WHITE);
+		if (Gdx.input.justTouched()) {
+			camera.unproject(touchPoint.set(Gdx.input.getX(), Gdx.input.getY(),
+					Assets.ZERO));
+
+			if (OverlapTester.pointInRectangle(muteBounds, touchPoint.x,
+					touchPoint.y)) {
+				changeSound();
+				return;
+			}
+		}
+	}
+
+	private void changeSound() {
+		if (muted) {
+			unMute();
+		} else {
+			mute();
+		}
 	}
 
 	private void restartButton() {
 		batch.begin();
-		font.draw(batch, "Restart", 10, 300);
+		font.draw(batch, "Restart", 10, HEIGHT);
 		batch.end();
 		if (Gdx.input.justTouched()) {
 			camera.unproject(touchPoint.set(Gdx.input.getX(), Gdx.input.getY(),
-					0));
+					Assets.ZERO));
 
 			if (OverlapTester.pointInRectangle(restartBounds, touchPoint.x,
 					touchPoint.y)) {
@@ -147,13 +255,14 @@ public class Game extends ApplicationAdapter {
 	}
 
 	private void gameOver() {
+		final int textAppearX = 25;
 		if (!gameOver) {
 			totalTime = (TimeUtils.millis() - initMilis) / 1000;
 		}
+		String totalTimeText = "Game Over ! Your Time: " + totalTime + " s";
 		batch.begin();
-		batch.draw(background, 0, 0);
-		font.draw(batch, ("Game Over ! Your Time: " + totalTime + " s"), 25,
-				400);
+		batch.draw(background, Assets.ZERO, Assets.ZERO);
+		font.draw(batch, (totalTimeText), textAppearX, HEIGHT - 80);
 		batch.end();
 		camera.update();
 		batch.setProjectionMatrix(camera.combined);
@@ -161,9 +270,12 @@ public class Game extends ApplicationAdapter {
 	}
 
 	private void updateAll() {
+		final String LEFT_POINTS_NAME = "Left Points: ";
+		final int textAppearX = 25;
 		batch.begin();
-		batch.draw(background, 0, 0);
-		font.draw(batch, "Crashes :  " + gingerMan.getLife(), 25, 400);
+		batch.draw(background, Assets.ZERO, Assets.ZERO);
+		font.draw(batch, LEFT_POINTS_NAME + gingerMan.getLife(), textAppearX,
+				HEIGHT - 80);
 		batch.end();
 		camera.update();
 		batch.setProjectionMatrix(camera.combined);
@@ -186,20 +298,24 @@ public class Game extends ApplicationAdapter {
 	 * Cria o cenário de gotas de chuva e grãos de açucar.
 	 */
 	private void createDrops() {
-		if (TimeUtils.nanoTime() - lastDropTime > TIME_TO_SPAWN) {
+		if (TimeUtils.nanoTime() - lastDropTime > TIME_TO_SPAWN_NEW_DROP) {
 			spawnDrop();
 		}
 		Iterator<DropObject> it = drops.iterator();
 		while (it.hasNext()) {
 			DropObject drop = it.next();
 			drop.y -= 200 * Gdx.graphics.getDeltaTime();
-			if (drop.y + drop.height < 0) {
+			if (drop.y + drop.height < Assets.ZERO) {
 				it.remove();
 			}
 			if (drop.overlaps(gingerMan)) {
-				drop.playSound();
+				if (!muted) {
+					drop.playSound();
+				}
 				gingerMan.update();
-				gingerMan.updateLife(drop.getDroppable().getModifyOfLife());
+				if (!gameOver) {
+					gingerMan.updateLife(drop.getDroppable().getModifyOfLife());
+				}
 				if (!gingerMan.isAlive()) {
 					this.state = State.GameOver;
 				}
@@ -230,11 +346,15 @@ public class Game extends ApplicationAdapter {
 	 * Inicializa qual tipo de objeto vai cair.
 	 */
 	private DropObject createDrop() {
+		final int PERCENT_TO_SPAWN_SUGAR = 5;
+		final int PERCENT_TO_SPAWN_JELLYBEAN = 5; // If Rain Large was dropped
+		final int PERCENT_TO_SPAWN_RAIN_LARGE = 1;
+
 		DropObject drop;
-		if (getRandPercent(5)) {
+		if (getRandPercent(PERCENT_TO_SPAWN_SUGAR)) {
 			drop = new DropObject(SugarDrop.getInstance());
-		} else if (getRandPercent(1)) {
-			if (getRandPercent(5)) {
+		} else if (getRandPercent(PERCENT_TO_SPAWN_RAIN_LARGE)) {
+			if (getRandPercent(PERCENT_TO_SPAWN_JELLYBEAN)) {
 				spawnDrop(new DropObject(Jellybean.getInstance()));
 			}
 			drop = new DropObject(RainDropLarge.getInstance());
@@ -259,7 +379,7 @@ public class Game extends ApplicationAdapter {
 		if (Gdx.input.isTouched()) {
 			clicked = true;
 		}
-		if (clicked) {
+		if (clicked && !isPaused()) {
 			moveGingerManToTouchLocal();
 		} else {
 			moveGingermanToAccelerometer();
@@ -267,8 +387,8 @@ public class Game extends ApplicationAdapter {
 		if (gingerMan.x > WIDTH - gingerMan.width) {
 			gingerMan.x = WIDTH - gingerMan.width;
 		}
-		if (gingerMan.x < 0) {
-			gingerMan.x = 0;
+		if (gingerMan.x < Assets.ZERO) {
+			gingerMan.x = Assets.ZERO;
 		}
 
 		renderLife();
@@ -317,7 +437,8 @@ public class Game extends ApplicationAdapter {
 	 * Move o {@code gingerman} para o local tocado.
 	 */
 	private void moveGingerManToTouchLocal() {
-		Vector3 vector = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+		Vector3 vector = new Vector3(Gdx.input.getX(), Gdx.input.getY(),
+				Assets.ZERO);
 		camera.unproject(vector);
 		if (gingerMan.x < vector.x) {
 			gingerMan.x += 200 * Gdx.graphics.getDeltaTime();
