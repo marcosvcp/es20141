@@ -1,4 +1,4 @@
-package control;
+package control.ui.utils;
 
 /**
  * Classe utilitária para guardar nomes de imagens, músicas e soms do jogo.
@@ -6,6 +6,8 @@ package control;
 public class Assets {
 	public static final String RAIN_DROP_SOUND = "drop.wav";
 	public static final String BACKGROUND_IMAGE = "bg.jpg";
+	public static final String INSTRUCTIONS_IMAGE = "instructions.jpg";
+	public static final String MENU_BACKGROUND_IMAGE = "bgmenu.jpg";
 	public static final String RAIN_DROP_IMAGE_SMALL = "droplet2.png";
 	public static final String RAIN_DROP_IMAGE_LARGE = "droplet.png";
 	public static final String JELLY_DROP_IMAGE_LARGE = "jujuba.png";

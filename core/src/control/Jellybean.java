@@ -4,6 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 
+import control.ui.utils.Assets;
+
 /**
  * Classe que representa uma gota de Chuva.
  */

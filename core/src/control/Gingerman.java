@@ -6,6 +6,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Rectangle;
 import com.mygdx.game.Game;
 
+import control.ui.utils.Assets;
+
 public class Gingerman extends Rectangle {
 	private Texture gingermanImage;
 	private Texture[] imageNames = new Texture[5];
