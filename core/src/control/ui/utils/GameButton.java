@@ -4,6 +4,9 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
 
+/**
+ * Representa um botão no jogo Gingerman
+ */
 public class GameButton {
 	private final int BOX_WIDTH = 260;
 	private int BOX_HEIGHT = 90;

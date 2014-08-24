@@ -3,6 +3,9 @@ package control.ui.utils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 
+/**
+ * Classe utilitária para testes de colisão
+ */
 public class OverlapTester {
 	public static boolean overlapRectangles(Rectangle r1, Rectangle r2) {
 		if (r1.x < r2.x + r2.width && r1.x + r1.width > r2.x

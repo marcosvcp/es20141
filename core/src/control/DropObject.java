@@ -2,6 +2,9 @@ package control;
 
 import com.badlogic.gdx.math.Rectangle;
 
+/**
+ * Classe usada para agrupar tipos e como decorator
+ */
 public class DropObject extends Rectangle {
 
 	/**
@@ -22,8 +25,8 @@ public class DropObject extends Rectangle {
 	public void setDroppable(Droppable objectDroppable) {
 		this.droppable = objectDroppable;
 	}
-	
-	public void playSound(){
+
+	public void playSound() {
 		droppable.getDropSound().play();
 	}
 }

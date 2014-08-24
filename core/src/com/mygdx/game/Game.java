@@ -1,12 +1,21 @@
 package com.mygdx.game;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -19,6 +28,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.TimeUtils;
 
 import control.DropObject;
@@ -53,9 +63,15 @@ public class Game extends ApplicationAdapter {
 	private GameButton pauseButton;
 	private GameButton exitButton;
 	private GameButton instructionsButton;
+	private GameButton rankingButton;
 
+	//
+	private Map<String, Long> ranking;
+	private boolean writing = false;
 	// In nanoseconds
-	private final int TIME_TO_SPAWN_NEW_DROP = 1000000;
+	// Current player
+	private StringBuilder playerName;
+	private int timeToSpawnNewDrop = 1000000;
 	private long totalTime = 0L;
 	private boolean gameOver;
 	private State state = State.Paused;
@@ -69,18 +85,29 @@ public class Game extends ApplicationAdapter {
 	private TextureRegion background;
 	private TextureRegion gameBG;
 	private TextureRegion menuBG;
+	private TextureRegion rankingBG;
 	private TextureRegion instructionsBG;
 
 	private Gingerman gingerMan;
 	private boolean muted = false;
 	private boolean readingInstructions = false;
+	private boolean readingRanking = false;
 	private long initMilis;
 	private Music crankDance;
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void create() {
-		Gdx.app.log(Gdx.graphics.getWidth() + "", "HEIGHT");
 		Gdx.input.setCatchBackKey(true);
+		Preferences prefs = Gdx.app.getPreferences("My Preferences");
+		String json = prefs.getString("rankingJSON");
+		if (json != null && !json.isEmpty()) {
+			ranking = (HashMap<String, Long>) new Json().fromJson(
+					HashMap.class, json);
+		} else {
+			ranking = new HashMap<String, Long>();
+		}
+		playerName = new StringBuilder();
 		createButtonsAndSetFont();
 		batch = new SpriteBatch();
 		shape = new ShapeRenderer();
@@ -91,10 +118,32 @@ public class Game extends ApplicationAdapter {
 		menuBG = initMenuBackGround();
 		gameBG = initGameBackGround();
 		instructionsBG = initInstructionsBackGround();
+		rankingBG = initRankingBackGround();
 		background = menuBG;
 		initMilis = TimeUtils.millis();
 	}
 
+	/**
+	 * Cria o background da tela de instruções
+	 */
+	private TextureRegion initRankingBackGround() {
+		Texture texture = getRankingBackGround();
+		TextureRegion bg = new TextureRegion(texture, Assets.ZERO, Assets.ZERO,
+				WIDTH, HEIGHT);
+		return bg;
+	}
+
+	/**
+	 * Instancia e retorna a {@code texture} do background de instruções
+	 */
+	private Texture getRankingBackGround() {
+		Texture texture = new Texture(Gdx.files.internal(Assets.RANKING_IMAGE));
+		return texture;
+	}
+
+	/**
+	 * Cria o background da tela de instruções
+	 */
 	private TextureRegion initInstructionsBackGround() {
 		Texture texture = getInstructionsBackGround();
 		TextureRegion bg = new TextureRegion(texture, Assets.ZERO, Assets.ZERO,
@@ -102,12 +151,28 @@ public class Game extends ApplicationAdapter {
 		return bg;
 	}
 
+	/**
+	 * Cria o background da tela do jogo
+	 */
+	private TextureRegion initGameBackGround() {
+		Texture texture = getGameBackGround();
+		TextureRegion bg = new TextureRegion(texture, Assets.ZERO, Assets.ZERO,
+				WIDTH, HEIGHT);
+		return bg;
+	}
+
+	/**
+	 * Instancia e retorna a {@code texture} do background de instruções
+	 */
 	private Texture getInstructionsBackGround() {
 		Texture texture = new Texture(
 				Gdx.files.internal(Assets.INSTRUCTIONS_IMAGE));
 		return texture;
 	}
 
+	/**
+	 * Cria o background da tela de menu
+	 */
 	private TextureRegion initMenuBackGround() {
 		Texture texture = getMenuBackGround();
 		TextureRegion bg = new TextureRegion(texture, Assets.ZERO, Assets.ZERO,
@@ -115,18 +180,27 @@ public class Game extends ApplicationAdapter {
 		return bg;
 	}
 
+	/**
+	 * Instancia e retorna a {@code texture} do background do jogo
+	 */
 	private Texture getGameBackGround() {
 		Texture texture = new Texture(
 				Gdx.files.internal(Assets.BACKGROUND_IMAGE));
 		return texture;
 	}
 
+	/**
+	 * Instancia e retorna a {@code texture} do background do menu
+	 */
 	private Texture getMenuBackGround() {
 		Texture texture = new Texture(
 				Gdx.files.internal(Assets.MENU_BACKGROUND_IMAGE));
 		return texture;
 	}
 
+	/**
+	 * Instancia os botões a e fonte usada no texto deles.
+	 */
 	private void createButtonsAndSetFont() {
 		final float FONT_SCALE = 1.5f;
 		touchPoint = new Vector3();
@@ -150,7 +224,7 @@ public class Game extends ApplicationAdapter {
 				+ UIUtils.BOX_MENU_RECT_OFFSET_X,
 				UIUtils.THIRD_BOX_MENU_LEFTBOTTOM_Y
 						+ UIUtils.BOX_MENU_RECT_OFFSET_Y, font, "Resume",
-				UIUtils.THIRD_BOX_MENU_LEFTBOTTOM_X - 27,// 20 pixels
+				UIUtils.THIRD_BOX_MENU_LEFTBOTTOM_X - 27,// pixels to centralize
 				UIUtils.THIRD_BOX_MENU_LEFTBOTTOM_Y);
 
 		exitButton = new GameButton(UIUtils.FOURTH_BOX_MENU_LEFTBOTTOM_X
@@ -164,8 +238,17 @@ public class Game extends ApplicationAdapter {
 				+ UIUtils.BOX_MENU_RECT_OFFSET_X,
 				UIUtils.FIFTH_BOX_MENU_LEFTBOTTOM_Y
 						+ UIUtils.BOX_MENU_RECT_OFFSET_Y, font, "Instructions",
-				UIUtils.FIFTH_BOX_MENU_LEFTBOTTOM_X - 48, // 33 Pixels
+				UIUtils.FIFTH_BOX_MENU_LEFTBOTTOM_X - 48, // Pixels to
+															// centralize
 				UIUtils.FIFTH_BOX_MENU_LEFTBOTTOM_Y);
+
+		rankingButton = new GameButton(UIUtils.SIXTH_BOX_MENU_LEFTBOTTOM_X
+				+ UIUtils.BOX_MENU_RECT_OFFSET_X,
+				UIUtils.SIXTH_BOX_MENU_LEFTBOTTOM_Y
+						+ UIUtils.BOX_MENU_RECT_OFFSET_Y, font, "Ranking",
+				UIUtils.SIXTH_BOX_MENU_LEFTBOTTOM_X - 48, // Pixels to
+															// centralize
+				UIUtils.SIXTH_BOX_MENU_LEFTBOTTOM_Y);
 	}
 
 	/**
@@ -218,6 +301,9 @@ public class Game extends ApplicationAdapter {
 		}
 	}
 
+	/**
+	 * Muda o estado da aplicação quando for presscionada a tecla BACK
+	 */
 	private void changeStateWhenTouchBack() {
 		if (Gdx.input.isKeyPressed(Keys.BACK)) {
 			if (!isPaused()) {
@@ -226,32 +312,47 @@ public class Game extends ApplicationAdapter {
 				}
 				changeBackGroundWhenPaused();
 				state = State.Paused;
+				playerName = new StringBuilder();
 				pauseButton();
 			} else if (readingInstructions) {
 				readingInstructions = false;
+				readingRanking = false;
 				background = menuBG;
 			}
 		}
 	}
 
+	/**
+	 * Renderiza os botões do menu
+	 */
 	private void renderButtons() {
 		startButton();
 		muteButton();
 		pauseButton();
 		exitButton();
 		instructionsButton();
+		rankingButton();
 	}
 
+	/**
+	 * Pausa a música {@code crankDance}
+	 */
 	private void mute() {
 		this.muted = true;
 		crankDance.pause();
 	}
 
+	/**
+	 * Desapausa a música {@code crankDance}
+	 */
 	private void unMute() {
 		this.muted = false;
 		crankDance.play();
 	}
 
+	/**
+	 * Pausa o jogo
+	 */
 	private void pauseButton() {
 		pauseButton.drawFont(batch);
 		if (Gdx.input.justTouched()) {
@@ -266,6 +367,9 @@ public class Game extends ApplicationAdapter {
 		}
 	}
 
+	/**
+	 * Leva a tela de instruções
+	 */
 	private void instructionsButton() {
 		instructionsButton.drawFont(batch);
 		if (Gdx.input.justTouched()) {
@@ -280,6 +384,27 @@ public class Game extends ApplicationAdapter {
 		}
 	}
 
+	/**
+	 * Leva a tela de rankings
+	 */
+	private void rankingButton() {
+		rankingButton.drawFont(batch);
+		if (Gdx.input.justTouched()) {
+			camera.unproject(touchPoint.set(Gdx.input.getX(), Gdx.input.getY(),
+					Assets.ZERO));
+			if (OverlapTester.pointInRectangle(rankingButton.getBounds(),
+					touchPoint.x, touchPoint.y)) {
+				background = rankingBG;
+				readingInstructions = true;
+				readingRanking = true;
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Finaliza a aplicação
+	 */
 	private void exitButton() {
 		exitButton.drawFont(batch);
 		if (Gdx.input.justTouched()) {
@@ -293,6 +418,9 @@ public class Game extends ApplicationAdapter {
 		}
 	}
 
+	/**
+	 * Volta pro menu ao estar jogando
+	 */
 	private void changeBackGroundWhenPaused() {
 		if (isPaused()) {
 			background = gameBG;
@@ -303,10 +431,16 @@ public class Game extends ApplicationAdapter {
 		}
 	}
 
-	private boolean isPaused() {
+	/**
+	 * Retorna true caso seja verdadeiro
+	 */
+	public boolean isPaused() {
 		return state == State.Paused;
 	}
 
+	/**
+	 * Botão referente ao mute
+	 */
 	private void muteButton() {
 		if (muted) {
 			muteButton.getFont().setColor(Color.GRAY);
@@ -325,6 +459,9 @@ public class Game extends ApplicationAdapter {
 		}
 	}
 
+	/**
+	 * Muda o estado de mute para unmute ou o inverso
+	 */
 	private void changeSound() {
 		if (muted) {
 			unMute();
@@ -333,6 +470,9 @@ public class Game extends ApplicationAdapter {
 		}
 	}
 
+	/**
+	 * Botão que inicializa as instancias de imagens e botões
+	 */
 	private void startButton() {
 		startButton.drawFont(batch);
 		if (Gdx.input.justTouched()) {
@@ -344,19 +484,13 @@ public class Game extends ApplicationAdapter {
 				loadElements();
 				drops.clear();
 				initMilis = TimeUtils.millis();
+				totalTime = 0L;
 				state = State.Running;
 				gameOver = false;
 				background = gameBG;
 				return;
 			}
 		}
-	}
-
-	private TextureRegion initGameBackGround() {
-		Texture texture = getGameBackGround();
-		TextureRegion bg = new TextureRegion(texture, Assets.ZERO, Assets.ZERO,
-				WIDTH, HEIGHT);
-		return bg;
 	}
 
 	private void gameOver() {
@@ -369,6 +503,75 @@ public class Game extends ApplicationAdapter {
 		batch.draw(background, Assets.ZERO, Assets.ZERO);
 		if (!isPaused()) {
 			font.draw(batch, (totalTimeText), textAppearX, HEIGHT);
+			font.draw(batch, "Name: " + playerName.toString(),
+					textAppearX + 170, HEIGHT - 100);
+			if (writing) {
+				writing = false;
+				Gdx.input.setInputProcessor(new InputProcessor() {
+
+					@Override
+					public boolean touchUp(int screenX, int screenY,
+							int pointer, int button) {
+						return false;
+					}
+
+					@Override
+					public boolean touchDragged(int screenX, int screenY,
+							int pointer) {
+						return false;
+					}
+
+					@Override
+					public boolean touchDown(int screenX, int screenY,
+							int pointer, int button) {
+						return false;
+					}
+
+					@Override
+					public boolean scrolled(int amount) {
+						return false;
+					}
+
+					@Override
+					public boolean mouseMoved(int screenX, int screenY) {
+						return false;
+					}
+
+					@Override
+					public boolean keyUp(int keycode) {
+						if (keycode == Input.Keys.ENTER) {
+							ranking.put(playerName.toString(), totalTime);
+							Gdx.input.setOnscreenKeyboardVisible(false);
+							persist();
+							writing = false;
+						} else if (keycode == Input.Keys.BACKSPACE) {
+							playerName.deleteCharAt(playerName.length() - 1);
+						}
+						return false;
+					}
+
+					private void persist() {
+						Preferences prefs = Gdx.app
+								.getPreferences("My Preferences");
+						Json json = new Json();
+						String jsonString = json.toJson(ranking);
+						prefs.putString("rankingJSON", jsonString);
+						prefs.flush();
+					}
+
+					@Override
+					public boolean keyTyped(char character) {
+						playerName.append(character);
+						return false;
+					}
+
+					@Override
+					public boolean keyDown(int keycode) {
+						return false;
+					}
+				});
+				Gdx.input.setOnscreenKeyboardVisible(true);
+			}
 		}
 		batch.end();
 		camera.update();
@@ -384,6 +587,19 @@ public class Game extends ApplicationAdapter {
 		if (!isPaused()) {
 			font.draw(batch, LEFT_POINTS_NAME + gingerMan.getLife(),
 					textAppearX, HEIGHT);
+		}
+		if (readingRanking) {
+			int countWinners = 0;
+			List<String> listset = new ArrayList<String>(ranking.keySet());
+			Collections.sort(listset);
+			for (String k : listset) {
+				if (countWinners == 5) {
+					break;
+				}
+				font.draw(batch, k + ": " + ranking.get(k) + " s", 300,
+						375 - (countWinners * 55));
+				countWinners++;
+			}
 		}
 		batch.end();
 		camera.update();
@@ -407,7 +623,7 @@ public class Game extends ApplicationAdapter {
 	 * Cria o cenário de gotas de chuva e grãos de açucar.
 	 */
 	private void createDrops() {
-		if (TimeUtils.nanoTime() - lastDropTime > TIME_TO_SPAWN_NEW_DROP) {
+		if (TimeUtils.nanoTime() - lastDropTime > timeToSpawnNewDrop) {
 			spawnDrop();
 		}
 		Iterator<DropObject> it = drops.iterator();
@@ -425,7 +641,9 @@ public class Game extends ApplicationAdapter {
 				if (!gameOver) {
 					gingerMan.updateLife(drop.getDroppable().getModifyOfLife());
 				}
-				if (!gingerMan.isAlive()) {
+				if (!gingerMan.isAlive() && this.state != State.GameOver) {
+					writing = true;
+					Gdx.input.setOnscreenKeyboardVisible(true);
 					this.state = State.GameOver;
 				}
 				it.remove();
@@ -465,6 +683,7 @@ public class Game extends ApplicationAdapter {
 		} else if (getRandPercent(PERCENT_TO_SPAWN_RAIN_LARGE)) {
 			if (getRandPercent(PERCENT_TO_SPAWN_JELLYBEAN)) {
 				spawnDrop(new DropObject(Jellybean.getInstance()));
+				timeToSpawnNewDrop = (int) (timeToSpawnNewDrop / 1.2);
 			}
 			drop = new DropObject(RainDropLarge.getInstance());
 		} else {
@@ -477,8 +696,9 @@ public class Game extends ApplicationAdapter {
 	 * Retorna se um certo evento deve ocorrer de acordo com a {@code percent}.
 	 */
 	public boolean getRandPercent(int percent) {
+		final int MAX_PERCENT = 100;
 		Random rand = new Random();
-		return rand.nextInt(100) <= percent;
+		return rand.nextInt(MAX_PERCENT) <= percent;
 	}
 
 	/**
@@ -547,16 +767,17 @@ public class Game extends ApplicationAdapter {
 	 * Move o {@code gingerman} para o local tocado.
 	 */
 	private void moveGingerManToTouchLocal() {
+		final int X_ACC = 200;
 		Vector3 vector = new Vector3(Gdx.input.getX(), Gdx.input.getY(),
 				Assets.ZERO);
 		camera.unproject(vector);
 		if (gingerMan.x < vector.x) {
-			gingerMan.x += 200 * Gdx.graphics.getDeltaTime();
+			gingerMan.x += X_ACC * Gdx.graphics.getDeltaTime();
 			if (gingerMan.x > vector.x) {
 				gingerMan.x = vector.x;
 			}
 		} else if (gingerMan.x > vector.x) {
-			gingerMan.x -= 200 * Gdx.graphics.getDeltaTime();
+			gingerMan.x -= X_ACC * Gdx.graphics.getDeltaTime();
 			if (gingerMan.x < vector.x) {
 				gingerMan.x = vector.x;
 			}

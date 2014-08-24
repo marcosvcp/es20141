@@ -7,6 +7,7 @@ public class Assets {
 	public static final String RAIN_DROP_SOUND = "drop.wav";
 	public static final String BACKGROUND_IMAGE = "bg.jpg";
 	public static final String INSTRUCTIONS_IMAGE = "instructions.jpg";
+	public static final String RANKING_IMAGE = "ranking.jpg";
 	public static final String MENU_BACKGROUND_IMAGE = "bgmenu.jpg";
 	public static final String RAIN_DROP_IMAGE_SMALL = "droplet2.png";
 	public static final String RAIN_DROP_IMAGE_LARGE = "droplet.png";
@@ -23,4 +24,5 @@ public class Assets {
 	public static final String RAIN_DROP_SOUND_LARGE = "crash.mp3";
 
 	public static final int ZERO = 0;
+	public static final String RANKING_TXT = "ranking.txt";
 }

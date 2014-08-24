@@ -1,5 +1,8 @@
 package control.ui.utils;
 
+/**
+ * Classe utilitária de interface para localização de objetos
+ */
 public class UIUtils {
 
 	public static final int BOX_MENU_OFFSET_X = 82;
