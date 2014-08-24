@@ -5,7 +5,7 @@ import com.badlogic.gdx.graphics.Texture;
 
 import control.ui.utils.Assets;
 
-public class Gingerman extends PlayerChar {
+public class Maria extends PlayerChar {
 	private Texture gingermanImage;
 
 	/**
@@ -13,24 +13,24 @@ public class Gingerman extends PlayerChar {
 	 */
 	private static final long serialVersionUID = -9185186586940085148L;
 
-	public Gingerman() {
+	public Maria() {
 		super();
 	}
 
 	@Override
 	public void initImages() {
 		super.getCharImagens()[0] = new Texture(
-				Gdx.files.internal(Assets.GINGERMAN_IMAGE_ONE));
+				Gdx.files.internal(Assets.MARIA_IMAGE_ONE));
 		super.getCharImagens()[1] = new Texture(
-				Gdx.files.internal(Assets.GINGERMAN_IMAGE_TWO));
+				Gdx.files.internal(Assets.MARIA_IMAGE_TWO));
 		super.getCharImagens()[2] = new Texture(
-				Gdx.files.internal(Assets.GINGERMAN_IMAGE_THREE));
+				Gdx.files.internal(Assets.MARIA_IMAGE_THREE));
 		super.getCharImagens()[3] = new Texture(
-				Gdx.files.internal(Assets.GINGERMAN_IMAGE_FOUR));
+				Gdx.files.internal(Assets.MARIA_IMAGE_FOUR));
 		super.getCharImagens()[4] = new Texture(
-				Gdx.files.internal(Assets.GINGERMAN_IMAGE_FIVE));
+				Gdx.files.internal(Assets.MARIA_IMAGE_FIVE));
 		gingermanImage = new Texture(
-				Gdx.files.internal(Assets.GINGERMAN_IMAGE_ONE));
+				Gdx.files.internal(Assets.MARIA_IMAGE_ONE));
 	}
 
 	@Override

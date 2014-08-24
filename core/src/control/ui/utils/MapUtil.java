@@ -5,12 +5,14 @@ import java.util.TreeMap;
 
 public class MapUtil {
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static Map sortByValue(Map unsortedMap) {
 		Map sortedMap = new TreeMap(new ValueComparator(unsortedMap));
 		sortedMap.putAll(unsortedMap);
 		return sortedMap;
 	}
 
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static Map sortByKey(Map unsortedMap) {
 		Map sortedMap = new TreeMap();
 		sortedMap.putAll(unsortedMap);

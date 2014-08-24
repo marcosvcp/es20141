@@ -15,7 +15,6 @@ import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -34,9 +33,14 @@ import com.badlogic.gdx.utils.TimeUtils;
 import control.DropObject;
 import control.Gingerman;
 import control.Jellybean;
+import control.Maria;
+import control.Negresco;
+import control.PlayerChar;
 import control.RainDrop;
 import control.RainDropLarge;
 import control.SugarDrop;
+import control.Tareco;
+import control.Treloso;
 import control.ui.utils.Assets;
 import control.ui.utils.GameButton;
 import control.ui.utils.MapUtil;
@@ -65,8 +69,13 @@ public class Game extends ApplicationAdapter {
 	private GameButton exitButton;
 	private GameButton instructionsButton;
 	private GameButton rankingButton;
+	private GameButton chooseCharLeft;
+	private GameButton chooseCharRight;
+	private InputProcessor inputGingerman;
 
 	//
+	private final String MY_PREFS = "My Preferences";
+	private final String RANKING_PREF = "rankingJSON";
 	private Map<String, Long> ranking;
 	private boolean writing = false;
 	// In nanoseconds
@@ -85,29 +94,24 @@ public class Game extends ApplicationAdapter {
 
 	private TextureRegion background;
 	private TextureRegion gameBG;
-	private TextureRegion menuBG;
 	private TextureRegion rankingBG;
 	private TextureRegion instructionsBG;
 
-	private Gingerman gingerMan;
+	private PlayerChar[] players = new PlayerChar[5];
 	private boolean muted = false;
 	private boolean readingInstructions = false;
 	private boolean readingRanking = false;
 	private long initMilis;
 	private Music crankDance;
 
-	@SuppressWarnings("unchecked")
+	private int menuChoosed = 0;
+	private TextureRegion[] menuBGS = new TextureRegion[5];
+
 	@Override
 	public void create() {
 		Gdx.input.setCatchBackKey(true);
-		Preferences prefs = Gdx.app.getPreferences("My Preferences");
-		String json = prefs.getString("rankingJSON");
-		if (json != null && !json.isEmpty()) {
-			ranking = (HashMap<String, Long>) new Json().fromJson(
-					HashMap.class, json);
-		} else {
-			ranking = new HashMap<String, Long>();
-		}
+		initInputProcessor();
+		initPreferences();
 		playerName = new StringBuilder();
 		createButtonsAndSetFont();
 		batch = new SpriteBatch();
@@ -115,38 +119,129 @@ public class Game extends ApplicationAdapter {
 		drops = new Array<DropObject>();
 		loadCamera();
 		loadSoundAndMusics();
-		loadElements();
-		menuBG = initMenuBackGround();
+		loadPlayers();
+		loadBackGrounds();
+		loadMenuBackGrounds();
+		background = getCurrentMenuBackGround();
+		initMilis = TimeUtils.millis();
+	}
+
+	private TextureRegion getCurrentMenuBackGround() {
+		return menuBGS[Math.abs(menuChoosed) % 5];
+	}
+
+	private void loadBackGrounds() {
 		gameBG = initGameBackGround();
 		instructionsBG = initInstructionsBackGround();
 		rankingBG = initRankingBackGround();
-		background = menuBG;
-		initMilis = TimeUtils.millis();
+	}
+
+	private void loadMenuBackGrounds() {
+		menuBGS[0] = initMenuBackGround();
+		menuBGS[1] = initMenuMariaBackGround();
+		menuBGS[2] = initMenuSoetBackGround();
+		menuBGS[3] = initMenuTarecoGround();
+		menuBGS[4] = initMenuTrelosoGround();
+	}
+
+	@SuppressWarnings("unchecked")
+	private void initPreferences() {
+		Preferences prefs = Gdx.app.getPreferences(MY_PREFS);
+		String json = prefs.getString(RANKING_PREF);
+		Gdx.app.log("JSON", json);
+		if (json != null && !json.isEmpty()) {
+			ranking = (HashMap<String, Long>) new Json().fromJson(
+					HashMap.class, json);
+		} else {
+			ranking = new HashMap<String, Long>();
+		}
+	}
+
+	private void initInputProcessor() {
+		inputGingerman = new InputProcessor() {
+
+			@Override
+			public boolean touchUp(int screenX, int screenY, int pointer,
+					int button) {
+				return false;
+			}
+
+			@Override
+			public boolean touchDragged(int screenX, int screenY, int pointer) {
+				return false;
+			}
+
+			@Override
+			public boolean touchDown(int screenX, int screenY, int pointer,
+					int button) {
+				return false;
+			}
+
+			@Override
+			public boolean scrolled(int amount) {
+				return false;
+			}
+
+			@Override
+			public boolean mouseMoved(int screenX, int screenY) {
+				return false;
+			}
+
+			@Override
+			public boolean keyUp(int keycode) {
+				if (keycode == Input.Keys.BACKSPACE) {
+					playerName.deleteCharAt(playerName.toString().length() - 1);
+				}
+				if (keycode == Input.Keys.ENTER) {
+					ranking.put(playerName.toString(), totalTime);
+					Gdx.input.setOnscreenKeyboardVisible(false);
+					persist();
+					writing = false;
+				}
+				return false;
+			}
+
+			private void persist() {
+				Preferences prefs = Gdx.app.getPreferences(MY_PREFS);
+				Json json = new Json();
+				String jsonString = json.toJson(ranking);
+				prefs.putString(RANKING_PREF, jsonString);
+				prefs.flush();
+			}
+
+			@Override
+			public boolean keyTyped(char character) {
+				playerName.append(character);
+				return false;
+			}
+
+			@Override
+			public boolean keyDown(int keycode) {
+				if (keycode == Input.Keys.BACKSPACE) {
+					playerName.deleteCharAt(playerName.toString().length() - 1);
+				}
+				return false;
+			}
+		};
+		Gdx.input.setInputProcessor(inputGingerman);
 	}
 
 	/**
 	 * Cria o background da tela de instruções
 	 */
 	private TextureRegion initRankingBackGround() {
-		Texture texture = getRankingBackGround();
+		Texture texture = new Texture(Gdx.files.internal(Assets.RANKING_IMAGE));
 		TextureRegion bg = new TextureRegion(texture, Assets.ZERO, Assets.ZERO,
 				WIDTH, HEIGHT);
 		return bg;
 	}
 
 	/**
-	 * Instancia e retorna a {@code texture} do background de instruções
-	 */
-	private Texture getRankingBackGround() {
-		Texture texture = new Texture(Gdx.files.internal(Assets.RANKING_IMAGE));
-		return texture;
-	}
-
-	/**
 	 * Cria o background da tela de instruções
 	 */
 	private TextureRegion initInstructionsBackGround() {
-		Texture texture = getInstructionsBackGround();
+		Texture texture = new Texture(
+				Gdx.files.internal(Assets.INSTRUCTIONS_IMAGE));
 		TextureRegion bg = new TextureRegion(texture, Assets.ZERO, Assets.ZERO,
 				WIDTH, HEIGHT);
 		return bg;
@@ -156,47 +251,66 @@ public class Game extends ApplicationAdapter {
 	 * Cria o background da tela do jogo
 	 */
 	private TextureRegion initGameBackGround() {
-		Texture texture = getGameBackGround();
+		Texture texture = new Texture(
+				Gdx.files.internal(Assets.BACKGROUND_IMAGE));
 		TextureRegion bg = new TextureRegion(texture, Assets.ZERO, Assets.ZERO,
 				WIDTH, HEIGHT);
 		return bg;
-	}
-
-	/**
-	 * Instancia e retorna a {@code texture} do background de instruções
-	 */
-	private Texture getInstructionsBackGround() {
-		Texture texture = new Texture(
-				Gdx.files.internal(Assets.INSTRUCTIONS_IMAGE));
-		return texture;
 	}
 
 	/**
 	 * Cria o background da tela de menu
 	 */
 	private TextureRegion initMenuBackGround() {
-		Texture texture = getMenuBackGround();
+		Texture texture = new Texture(
+				Gdx.files.internal(Assets.MENU_GINGER_BACKGROUND_IMAGE));
 		TextureRegion bg = new TextureRegion(texture, Assets.ZERO, Assets.ZERO,
 				WIDTH, HEIGHT);
 		return bg;
 	}
 
 	/**
-	 * Instancia e retorna a {@code texture} do background do jogo
+	 * Cria o background da tela de menu
 	 */
-	private Texture getGameBackGround() {
+	private TextureRegion initMenuMariaBackGround() {
 		Texture texture = new Texture(
-				Gdx.files.internal(Assets.BACKGROUND_IMAGE));
-		return texture;
+				Gdx.files.internal(Assets.MENU_MARIA_BACKGROUND_IMAGE));
+		TextureRegion bg = new TextureRegion(texture, Assets.ZERO, Assets.ZERO,
+				WIDTH, HEIGHT);
+		return bg;
 	}
 
 	/**
-	 * Instancia e retorna a {@code texture} do background do menu
+	 * Cria o background da tela de menu
 	 */
-	private Texture getMenuBackGround() {
+	private TextureRegion initMenuSoetBackGround() {
 		Texture texture = new Texture(
-				Gdx.files.internal(Assets.MENU_BACKGROUND_IMAGE));
-		return texture;
+				Gdx.files.internal(Assets.MENU_SOET_BACKGROUND_IMAGE));
+		TextureRegion bg = new TextureRegion(texture, Assets.ZERO, Assets.ZERO,
+				WIDTH, HEIGHT);
+		return bg;
+	}
+
+	/**
+	 * Cria o background da tela de menu
+	 */
+	private TextureRegion initMenuTarecoGround() {
+		Texture texture = new Texture(
+				Gdx.files.internal(Assets.MENU_TARECO_BACKGROUND_IMAGE));
+		TextureRegion bg = new TextureRegion(texture, Assets.ZERO, Assets.ZERO,
+				WIDTH, HEIGHT);
+		return bg;
+	}
+
+	/**
+	 * Cria o background da tela de menu
+	 */
+	private TextureRegion initMenuTrelosoGround() {
+		Texture texture = new Texture(
+				Gdx.files.internal(Assets.MENU_TRELOSO_BACKGROUND_IMAGE));
+		TextureRegion bg = new TextureRegion(texture, Assets.ZERO, Assets.ZERO,
+				WIDTH, HEIGHT);
+		return bg;
 	}
 
 	/**
@@ -250,14 +364,28 @@ public class Game extends ApplicationAdapter {
 				UIUtils.SIXTH_BOX_MENU_LEFTBOTTOM_X - 48, // Pixels to
 															// centralize
 				UIUtils.SIXTH_BOX_MENU_LEFTBOTTOM_Y);
+
+		chooseCharLeft = new GameButton(6, 342, null, null, 0, 0);
+		chooseCharRight = new GameButton(733, 342, null, null, 0, 0);
 	}
 
 	/**
 	 * Carrega o personagem principal {@code gingerMan}.
 	 */
-	private void loadElements() {
-		gingerMan = new Gingerman();
+	private void loadPlayers() {
+		players[0] = new Gingerman();
+		players[1] = new Maria();
+		players[2] = new Negresco();
+		players[3] = new Tareco();
+		players[4] = new Treloso();
+	}
 
+	private void reviveAllPlayers() {
+		players[0].revive();
+		players[1].revive();
+		players[2].revive();
+		players[3].revive();
+		players[4].revive();
 	}
 
 	/**
@@ -296,7 +424,9 @@ public class Game extends ApplicationAdapter {
 		}
 		if (!isPaused()) {
 			renderPlayer();
-			renderDrops();
+			if (!gameOver) {
+				renderDrops();
+			}
 		} else if (!readingInstructions) {
 			renderButtons();
 		}
@@ -318,7 +448,7 @@ public class Game extends ApplicationAdapter {
 			} else if (readingInstructions) {
 				readingInstructions = false;
 				readingRanking = false;
-				background = menuBG;
+				background = getCurrentMenuBackGround();
 			}
 		}
 	}
@@ -333,6 +463,8 @@ public class Game extends ApplicationAdapter {
 		exitButton();
 		instructionsButton();
 		rankingButton();
+		chooseCharLeftButton();
+		chooseCharRightButton();
 	}
 
 	/**
@@ -363,6 +495,40 @@ public class Game extends ApplicationAdapter {
 					touchPoint.x, touchPoint.y)) {
 				changeBackGroundWhenPaused();
 				initMilis = TimeUtils.millis();
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Muda a tela
+	 */
+	private void chooseCharLeftButton() {
+		if (Gdx.input.justTouched()) {
+			camera.unproject(touchPoint.set(Gdx.input.getX(), Gdx.input.getY(),
+					Assets.ZERO));
+			if (OverlapTester.pointInRectangle(chooseCharLeft.getBounds(),
+					touchPoint.x, touchPoint.y)) {
+				menuChoosed++;
+				background = getCurrentMenuBackGround();
+				reload();
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Muda a tela
+	 */
+	private void chooseCharRightButton() {
+		if (Gdx.input.justTouched()) {
+			camera.unproject(touchPoint.set(Gdx.input.getX(), Gdx.input.getY(),
+					Assets.ZERO));
+			if (OverlapTester.pointInRectangle(chooseCharRight.getBounds(),
+					touchPoint.x, touchPoint.y)) {
+				menuChoosed--;
+				background = getCurrentMenuBackGround();
+				reload();
 				return;
 			}
 		}
@@ -427,7 +593,7 @@ public class Game extends ApplicationAdapter {
 			background = gameBG;
 			state = State.Running;
 		} else {
-			background = menuBG;
+			background = getCurrentMenuBackGround();
 			state = State.Paused;
 		}
 	}
@@ -481,17 +647,20 @@ public class Game extends ApplicationAdapter {
 					Assets.ZERO));
 			if (OverlapTester.pointInRectangle(startButton.getBounds(),
 					touchPoint.x, touchPoint.y)) {
-				loadCamera();
-				loadElements();
-				drops.clear();
-				initMilis = TimeUtils.millis();
-				totalTime = 0L;
+				reload();
 				state = State.Running;
-				gameOver = false;
 				background = gameBG;
 				return;
 			}
 		}
+	}
+
+	private void reload() {
+		reviveAllPlayers();
+		drops.clear();
+		initMilis = TimeUtils.millis();
+		totalTime = 0L;
+		gameOver = false;
 	}
 
 	private void gameOver() {
@@ -508,70 +677,7 @@ public class Game extends ApplicationAdapter {
 					textAppearX + 170, HEIGHT - 100);
 			if (writing) {
 				writing = false;
-				Gdx.input.setInputProcessor(new InputProcessor() {
-
-					@Override
-					public boolean touchUp(int screenX, int screenY,
-							int pointer, int button) {
-						return false;
-					}
-
-					@Override
-					public boolean touchDragged(int screenX, int screenY,
-							int pointer) {
-						return false;
-					}
-
-					@Override
-					public boolean touchDown(int screenX, int screenY,
-							int pointer, int button) {
-						return false;
-					}
-
-					@Override
-					public boolean scrolled(int amount) {
-						return false;
-					}
-
-					@Override
-					public boolean mouseMoved(int screenX, int screenY) {
-						return false;
-					}
-
-					@Override
-					public boolean keyUp(int keycode) {
-						if (keycode == Input.Keys.ENTER) {
-							ranking.put(playerName.toString(), totalTime);
-							Gdx.input.setOnscreenKeyboardVisible(false);
-							persist();
-							writing = false;
-						} else if (keycode == Input.Keys.BACKSPACE) {
-							playerName.deleteCharAt(playerName.length() - 1);
-						}
-						return false;
-					}
-
-					private void persist() {
-						Preferences prefs = Gdx.app
-								.getPreferences("My Preferences");
-						Json json = new Json();
-						String jsonString = json.toJson(ranking);
-						prefs.putString("rankingJSON", jsonString);
-						prefs.flush();
-					}
-
-					@Override
-					public boolean keyTyped(char character) {
-						playerName.append(character);
-						return false;
-					}
-
-					@Override
-					public boolean keyDown(int keycode) {
-						return false;
-					}
-				});
-				Gdx.input.setOnscreenKeyboardVisible(true);
+				Gdx.input.setOnscreenKeyboardVisible(!writing);
 			}
 		}
 		batch.end();
@@ -586,28 +692,39 @@ public class Game extends ApplicationAdapter {
 		batch.begin();
 		batch.draw(background, Assets.ZERO, Assets.ZERO);
 		if (!isPaused()) {
-			font.draw(batch, LEFT_POINTS_NAME + gingerMan.getLife(),
+			font.draw(batch, LEFT_POINTS_NAME + getCurrentPlayer().getLife(),
 					textAppearX, HEIGHT);
 		}
 		if (readingRanking) {
-			int countWinners = 0;
-			@SuppressWarnings("unchecked")
-			List<String> list = new ArrayList<String>(MapUtil.sortByValue(
-					ranking).keySet());
-			Collections.reverse(list);
-			for (String k : list) {
-				if (countWinners == 5) {
-					break;
-				}
-				font.draw(batch, k + ": " + ranking.get(k) + " s", 300,
-						375 - (countWinners * 55));
-				countWinners++;
-			}
+			printRanking();
 		}
 		batch.end();
 		camera.update();
 		batch.setProjectionMatrix(camera.combined);
 		shape.setProjectionMatrix(camera.combined);
+	}
+
+	private PlayerChar getCurrentPlayer() {
+		return players[Math.abs(menuChoosed) % 5];
+	}
+
+	private void printRanking() {
+		int countWinners = 0;
+		final int X_RANKING_TEXT = 300;
+		final int Y_RANKING_TEXT = 375;
+		final int Y_OFFSET = 56;
+		@SuppressWarnings("unchecked")
+		List<String> list = new ArrayList<String>(MapUtil.sortByValue(ranking)
+				.keySet());
+		Collections.reverse(list);
+		for (String k : list) {
+			if (countWinners == 5) {
+				break;
+			}
+			font.draw(batch, k + ": " + ranking.get(k) + " s", X_RANKING_TEXT,
+					Y_RANKING_TEXT - (countWinners * Y_OFFSET));
+			countWinners++;
+		}
 	}
 
 	/**
@@ -636,15 +753,17 @@ public class Game extends ApplicationAdapter {
 			if (drop.y + drop.height < Assets.ZERO) {
 				it.remove();
 			}
-			if (drop.overlaps(gingerMan)) {
+			if (drop.overlaps(getCurrentPlayer())) {
 				if (!muted) {
 					drop.playSound();
 				}
-				gingerMan.update();
+				getCurrentPlayer().update();
 				if (!gameOver) {
-					gingerMan.updateLife(drop.getDroppable().getModifyOfLife());
+					getCurrentPlayer().updateLife(
+							drop.getDroppable().getModifyOfLife());
 				}
-				if (!gingerMan.isAlive() && this.state != State.GameOver) {
+				if (!getCurrentPlayer().isAlive()
+						&& this.state != State.GameOver) {
 					writing = true;
 					Gdx.input.setOnscreenKeyboardVisible(true);
 					this.state = State.GameOver;
@@ -716,26 +835,27 @@ public class Game extends ApplicationAdapter {
 		} else {
 			moveGingermanToAccelerometer();
 		}
-		if (gingerMan.x > WIDTH - gingerMan.width) {
-			gingerMan.x = WIDTH - gingerMan.width;
+		if (getCurrentPlayer().x > WIDTH - getCurrentPlayer().width) {
+			getCurrentPlayer().x = WIDTH - getCurrentPlayer().width;
 		}
-		if (gingerMan.x < Assets.ZERO) {
-			gingerMan.x = Assets.ZERO;
+		if (getCurrentPlayer().x < Assets.ZERO) {
+			getCurrentPlayer().x = Assets.ZERO;
 		}
 		if (!isPaused()) {
 			renderLife();
 		}
 
 		batch.begin();
-		batch.draw(gingerMan.getGingermanImage(), gingerMan.x, gingerMan.y);
+		batch.draw(getCurrentPlayer().getGingermanImage(),
+				getCurrentPlayer().x, getCurrentPlayer().y);
 		batch.end();
 
 	}
 
 	private void renderLife() {
 		shape.begin(ShapeType.Filled);
-		Rectangle visualRectangle = gingerMan.getVisualLifeRectangle();
-		shape.setColor(gingerMan.getColor());
+		Rectangle visualRectangle = getCurrentPlayer().getVisualLifeRectangle();
+		shape.setColor(getCurrentPlayer().getColor());
 		shape.rect(visualRectangle.x, visualRectangle.y, visualRectangle.width,
 				visualRectangle.height);
 		shape.end();
@@ -774,15 +894,15 @@ public class Game extends ApplicationAdapter {
 		Vector3 vector = new Vector3(Gdx.input.getX(), Gdx.input.getY(),
 				Assets.ZERO);
 		camera.unproject(vector);
-		if (gingerMan.x < vector.x) {
-			gingerMan.x += X_ACC * Gdx.graphics.getDeltaTime();
-			if (gingerMan.x > vector.x) {
-				gingerMan.x = vector.x;
+		if (getCurrentPlayer().x < vector.x) {
+			getCurrentPlayer().x += X_ACC * Gdx.graphics.getDeltaTime();
+			if (getCurrentPlayer().x > vector.x) {
+				getCurrentPlayer().x = vector.x;
 			}
-		} else if (gingerMan.x > vector.x) {
-			gingerMan.x -= X_ACC * Gdx.graphics.getDeltaTime();
-			if (gingerMan.x < vector.x) {
-				gingerMan.x = vector.x;
+		} else if (getCurrentPlayer().x > vector.x) {
+			getCurrentPlayer().x -= X_ACC * Gdx.graphics.getDeltaTime();
+			if (getCurrentPlayer().x < vector.x) {
+				getCurrentPlayer().x = vector.x;
 			}
 		} else {
 			clicked = false;
@@ -792,9 +912,10 @@ public class Game extends ApplicationAdapter {
 
 	@Override
 	public void dispose() {
+		drops.clear();
 		crankDance.dispose();
 		batch.dispose();
-		gingerMan.getGingermanImage().dispose();
+		getCurrentPlayer().getGingermanImage().dispose();
 		SugarDrop.getInstance().dispose();
 		RainDrop.getInstance().dispose();
 		RainDropLarge.getInstance().dispose();

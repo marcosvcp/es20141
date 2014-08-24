@@ -30,7 +30,7 @@ public class Jellybean implements Droppable {
 
 	@Override
 	public int getModifyOfLife() {
-		return 100;
+		return Gingerman.MAXIMUM_LIFE;
 	}
 
 	@Override
