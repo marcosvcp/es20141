@@ -13,8 +13,9 @@ public class Start extends AndroidApplication {
 		super.onCreate(savedInstanceState);
 		AndroidApplicationConfiguration cfg = new AndroidApplicationConfiguration();
 		cfg.useAccelerometer = true;
-		cfg.useCompass = false;
+		cfg.useCompass = true;
 		cfg.getTouchEventsForLiveWallpaper = true;
+		cfg.useWakelock = false;
 		initialize(new Game(), cfg);
 	}
 }

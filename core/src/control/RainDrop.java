@@ -15,8 +15,10 @@ public class RainDrop implements Droppable {
 	private Texture rainDropImage;
 
 	private RainDrop() {
-		rainDropSound = Gdx.audio.newSound(Gdx.files.internal(Assets.RAIN_DROP_SOUND));
-		rainDropImage = new Texture(Gdx.files.internal(Assets.RAIN_DROP_IMAGE_SMALL));
+		rainDropSound = Gdx.audio.newSound(Gdx.files
+				.internal(Assets.RAIN_DROP_SOUND));
+		rainDropImage = new Texture(
+				Gdx.files.internal(Assets.RAIN_DROP_IMAGE_SMALL));
 	}
 
 	public static RainDrop getInstance() {
@@ -64,6 +66,11 @@ public class RainDrop implements Droppable {
 	@Override
 	public void dispose() {
 		getRainDropImage().dispose();
+	}
+
+	@Override
+	public boolean vibrateWhenOverlaps() {
+		return false;
 	}
 
 }

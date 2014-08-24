@@ -110,6 +110,7 @@ public class Game extends ApplicationAdapter {
 	@Override
 	public void create() {
 		Gdx.input.setCatchBackKey(true);
+		Gdx.input.setCatchMenuKey(true);
 		initInputProcessor();
 		initPreferences();
 		playerName = new StringBuilder();
@@ -148,7 +149,6 @@ public class Game extends ApplicationAdapter {
 	private void initPreferences() {
 		Preferences prefs = Gdx.app.getPreferences(MY_PREFS);
 		String json = prefs.getString(RANKING_PREF);
-		Gdx.app.log("JSON", json);
 		if (json != null && !json.isEmpty()) {
 			ranking = (HashMap<String, Long>) new Json().fromJson(
 					HashMap.class, json);
@@ -200,6 +200,8 @@ public class Game extends ApplicationAdapter {
 					Gdx.input.setOnscreenKeyboardVisible(false);
 					persist();
 					writing = false;
+					state = State.Paused;
+					background = getCurrentMenuBackGround();
 				}
 				return false;
 			}
@@ -439,7 +441,8 @@ public class Game extends ApplicationAdapter {
 	 * Muda o estado da aplicação quando for presscionada a tecla BACK
 	 */
 	private void changeStateWhenTouchBack() {
-		if (Gdx.input.isKeyPressed(Keys.BACK)) {
+		if (Gdx.input.isKeyPressed(Keys.BACK)
+				|| Gdx.input.isKeyPressed(Keys.MENU)) {
 			if (!isPaused()) {
 				if (!gameOver) {
 					totalTime += (TimeUtils.millis() - initMilis) / 1000;
@@ -758,6 +761,10 @@ public class Game extends ApplicationAdapter {
 			}
 			if (drop.overlaps(getCurrentPlayer())) {
 				if (!muted) {
+					final int VIBRATE_TIME = 500;
+					if (drop.getDroppable().vibrateWhenOverlaps()) {
+						Gdx.input.vibrate(VIBRATE_TIME);
+					}
 					drop.playSound();
 				}
 				getCurrentPlayer().update();
@@ -808,7 +815,6 @@ public class Game extends ApplicationAdapter {
 		} else if (getRandPercent(PERCENT_TO_SPAWN_RAIN_LARGE)) {
 			if (getRandPercent(PERCENT_TO_SPAWN_JELLYBEAN)) {
 				spawnDrop(new DropObject(Jellybean.getInstance()));
-				timeToSpawnNewDrop = (int) (timeToSpawnNewDrop / 1.2);
 			}
 			drop = new DropObject(RainDropLarge.getInstance());
 		} else {

@@ -67,4 +67,9 @@ public class Jellybean implements Droppable {
 	public void dispose() {
 		getJellyDropImage().dispose();
 	}
+
+	@Override
+	public boolean vibrateWhenOverlaps() {
+		return false;
+	}
 }

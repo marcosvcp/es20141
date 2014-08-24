@@ -25,4 +25,9 @@ public interface Droppable {
 	 */
 	Sound getDropSound();
 
+	/**
+	 * Retorna se o celular deve vibrar ao colidir com o objeto
+	 */
+	boolean vibrateWhenOverlaps();
+
 }
