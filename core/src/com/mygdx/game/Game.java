@@ -39,6 +39,7 @@ import control.RainDropLarge;
 import control.SugarDrop;
 import control.ui.utils.Assets;
 import control.ui.utils.GameButton;
+import control.ui.utils.MapUtil;
 import control.ui.utils.OverlapTester;
 import control.ui.utils.UIUtils;
 
@@ -590,9 +591,11 @@ public class Game extends ApplicationAdapter {
 		}
 		if (readingRanking) {
 			int countWinners = 0;
-			List<String> listset = new ArrayList<String>(ranking.keySet());
-			Collections.sort(listset);
-			for (String k : listset) {
+			@SuppressWarnings("unchecked")
+			List<String> list = new ArrayList<String>(MapUtil.sortByValue(
+					ranking).keySet());
+			Collections.reverse(list);
+			for (String k : list) {
 				if (countWinners == 5) {
 					break;
 				}
