@@ -370,8 +370,8 @@ public class Game extends ApplicationAdapter {
 															// centralize
 				UIUtils.SIXTH_BOX_MENU_LEFTBOTTOM_Y);
 
-		chooseCharLeft = new GameButton(6, 342, null, null, 0, 0);
-		chooseCharRight = new GameButton(733, 342, null, null, 0, 0);
+		chooseCharLeft = new GameButton(0, 342, null, null, 0, 0);
+		chooseCharRight = new GameButton(550, 342, null, null, 0, 0);
 	}
 
 	/**
