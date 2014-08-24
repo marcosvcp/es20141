@@ -190,7 +190,10 @@ public class Game extends ApplicationAdapter {
 			@Override
 			public boolean keyUp(int keycode) {
 				if (keycode == Input.Keys.BACKSPACE) {
-					playerName.deleteCharAt(playerName.toString().length() - 1);
+					if (playerName.length() >= 1) {
+						playerName
+								.deleteCharAt(playerName.toString().length() - 1);
+					}
 				}
 				if (keycode == Input.Keys.ENTER) {
 					ranking.put(playerName.toString(), totalTime);
@@ -832,8 +835,6 @@ public class Game extends ApplicationAdapter {
 		}
 		if (clicked && !isPaused()) {
 			moveGingerManToTouchLocal();
-		} else {
-			moveGingermanToAccelerometer();
 		}
 		if (getCurrentPlayer().x > WIDTH - getCurrentPlayer().width) {
 			getCurrentPlayer().x = WIDTH - getCurrentPlayer().width;
@@ -862,31 +863,6 @@ public class Game extends ApplicationAdapter {
 	}
 
 	/**
-	 * Move o {@code gingerman} de acordo com o acelerometro.
-	 */
-	private void moveGingermanToAccelerometer() {
-		// int constant = Gdx.graphics.getHeight() / 10;
-		// Vector3 vector = new Vector3(constant
-		// * (Gdx.input.getAccelerometerY() + 10),
-		// Gdx.input.getAccelerometerX(), 0);
-		// camera.unproject(vector);
-		// if (gingerMan.x < vector.x) {
-		// gingerMan.x += 200 * Gdx.graphics.getDeltaTime();
-		// if (gingerMan.x > vector.x) {
-		// gingerMan.x = vector.x;
-		// }
-		// } else if (gingerMan.x > vector.x) {
-		// gingerMan.x -= 200 * Gdx.graphics.getDeltaTime();
-		// if (gingerMan.x < vector.x) {
-		// gingerMan.x = vector.x;
-		// }
-		// } else {
-		// clicked = false;
-		// }
-
-	}
-
-	/**
 	 * Move o {@code gingerman} para o local tocado.
 	 */
 	private void moveGingerManToTouchLocal() {
@@ -907,7 +883,6 @@ public class Game extends ApplicationAdapter {
 		} else {
 			clicked = false;
 		}
-
 	}
 
 	@Override
