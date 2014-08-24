@@ -199,6 +199,7 @@ public class Game extends ApplicationAdapter {
 					ranking.put(playerName.toString(), totalTime);
 					Gdx.input.setOnscreenKeyboardVisible(false);
 					persist();
+					playerName = new StringBuilder();
 					writing = false;
 					state = State.Paused;
 					background = getCurrentMenuBackGround();
